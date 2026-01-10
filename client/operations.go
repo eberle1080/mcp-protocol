@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/viant/jsonrpc"
 	"github.com/viant/jsonrpc/transport"
-	"github.com/viant/mcp-protocol/schema"
+	"github.com/eberle1080/mcp-protocol/schema"
 )
 
 type Operations interface {

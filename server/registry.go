@@ -1,6 +1,6 @@
 package server
 
-import "github.com/viant/mcp-protocol/syncmap"
+import "github.com/eberle1080/mcp-protocol/syncmap"
 
 // Registry holds registered tools, resources, prompts, etc. for a handler instance.
 type Registry struct {

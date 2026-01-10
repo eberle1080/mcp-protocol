@@ -2,7 +2,7 @@ package authorization
 
 import (
 	"context"
-	"github.com/viant/mcp-protocol/oauth2/meta"
+	"github.com/eberle1080/mcp-protocol/oauth2/meta"
 	"golang.org/x/oauth2"
 )
 

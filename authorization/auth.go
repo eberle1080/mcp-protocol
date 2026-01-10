@@ -1,6 +1,6 @@
 package authorization
 
-import "github.com/viant/mcp-protocol/oauth2/meta"
+import "github.com/eberle1080/mcp-protocol/oauth2/meta"
 
 // Token carries authentication credentials.
 type Token struct {

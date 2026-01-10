@@ -1,4 +1,4 @@
-module github.com/viant/mcp-protocol
+module github.com/eberle1080/mcp-protocol
 
 go 1.23.8
 

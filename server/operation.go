@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/viant/jsonrpc"
-	"github.com/viant/mcp-protocol/schema"
+	"github.com/eberle1080/mcp-protocol/schema"
 )
 
 // Operations lists all JSON-RPC methods that an MCP handler may implement.

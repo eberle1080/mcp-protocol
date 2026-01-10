@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/viant/jsonrpc"
 	"github.com/viant/jsonrpc/transport"
-	"github.com/viant/mcp-protocol/client"
-	"github.com/viant/mcp-protocol/logger"
-	"github.com/viant/mcp-protocol/schema"
-	"github.com/viant/mcp-protocol/server"
+	"github.com/eberle1080/mcp-protocol/client"
+	"github.com/eberle1080/mcp-protocol/logger"
+	"github.com/eberle1080/mcp-protocol/schema"
+	"github.com/eberle1080/mcp-protocol/server"
 )
 
 // MyMCPServer is a sample MCP implementer embedding the default Base.
@@ -18,9 +18,10 @@ type MyMCPServer struct {
 // ListResources implements the resources/list method.
 func (i *MyMCPServer) ListResources(
 	ctx context.Context,
-	req *schema.ListResourcesRequest,
+	jReq *jsonrpc.TypedRequest[*schema.ListResourcesRequest],
 ) (*schema.ListResourcesResult, *jsonrpc.Error) {
 	// TODO: return actual resources
+	// req := jReq.Request  // Access actual request if needed
 	return &schema.ListResourcesResult{}, nil
 }
 

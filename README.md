@@ -2,7 +2,7 @@
 
 MCP-Protocol is a Go implementation of the Model Context Protocol — a standardized way for applications to communicate with AI models. It allows developers to seamlessly bridge applications and AI models using a lightweight, JSON-RPC–based protocol.
 
-This repository contains the shared protocol definitions and schemas for MCP. It is used by github.com/viant/mcp, which provides the actual implementation of the MCP server and client framework.
+This repository contains the shared protocol definitions and schemas for MCP. This is a fork of github.com/viant/mcp-protocol. The original is used by github.com/viant/mcp, which provides the actual implementation of the MCP server and client framework.
 
 [Official Model Context Protocol Specification](https://modelcontextprotocol.io/introduction)
 
@@ -27,7 +27,7 @@ Key features:
 
 ## Module Structure
 
-`github.com/viant/mcp-protocol` is the Go module containing the shared Model Context Protocol (MCP) contracts:
+`github.com/eberle1080/mcp-protocol` is the Go module containing the shared Model Context Protocol (MCP) contracts:
 
 - **schema**: JSON-RPC request, result, and notification types generated from the MCP JSON schema.
 - **server**: `server.Operations`, `server.Handler` interface and
@@ -48,7 +48,7 @@ import (
   "context"
   "fmt"
   "github.com/viant/jsonrpc"
-  "github.com/viant/mcp-protocol/schema"
+  "github.com/eberle1080/mcp-protocol/schema"
   serverproto "github.com/viant/mcp-protocol/server"
   "github.com/viant/mcp/server"
   "log"
@@ -99,10 +99,10 @@ import (
   "context"
   "github.com/viant/jsonrpc"
   "github.com/viant/jsonrpc/transport"
-  "github.com/viant/mcp-protocol/client"
-  "github.com/viant/mcp-protocol/logger"
-  "github.com/viant/mcp-protocol/schema"
-  "github.com/viant/mcp-protocol/server"
+  "github.com/eberle1080/mcp-protocol/client"
+  "github.com/eberle1080/mcp-protocol/logger"
+  "github.com/eberle1080/mcp-protocol/schema"
+  "github.com/eberle1080/mcp-protocol/server"
 )
 
 // MyImplementer is a sample MCP implementer embedding the default Base.
@@ -161,7 +161,7 @@ import (
     "github.com/viant/afs/storage"
     "github.com/viant/mcp/example/custom"
     "github.com/viant/mcp/server"
-    "github.com/viant/mcp-protocol/schema"
+    "github.com/eberle1080/mcp-protocol/schema"
 )
 
 //go:embed data/*

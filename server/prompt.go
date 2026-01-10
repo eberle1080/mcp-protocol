@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/viant/jsonrpc"
-	"github.com/viant/mcp-protocol/schema"
+	"github.com/eberle1080/mcp-protocol/schema"
 )
 
 // PromptHandlerFunc defines a function to handle a prompt call.

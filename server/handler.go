@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/viant/jsonrpc"
 	"github.com/viant/jsonrpc/transport"
-	"github.com/viant/mcp-protocol/client"
-	"github.com/viant/mcp-protocol/logger"
+	"github.com/eberle1080/mcp-protocol/client"
+	"github.com/eberle1080/mcp-protocol/logger"
 )
 
 // Handler represents a protocol implementer.

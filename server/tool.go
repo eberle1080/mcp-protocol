@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/viant/jsonrpc"
-	"github.com/viant/mcp-protocol/schema"
+	"github.com/eberle1080/mcp-protocol/schema"
 )
 
 // ToolHandlerFunc defines a function to handle a tool call.
