@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 
 	"github.com/eberle1080/mcp-protocol/schema"

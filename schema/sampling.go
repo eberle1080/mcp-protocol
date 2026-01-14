@@ -6,13 +6,6 @@ type Message struct {
 	Content interface{} `json:"content"` // string or object for multi-modal
 }
 
-// ModelPreferences specifies priorities for model selection
-type ModelPreferences struct {
-	CostPriority         *float64 `json:"costPriority,omitempty"`         // 0-1, higher means prefer lower cost
-	SpeedPriority        *float64 `json:"speedPriority,omitempty"`        // 0-1, higher means prefer faster models
-	IntelligencePriority *float64 `json:"intelligencePriority,omitempty"` // 0-1, higher means prefer more capable models
-}
-
 // SamplingCreateMessageRequest represents a request to create an LLM completion
 type SamplingCreateMessageRequest struct {
 	Messages         []Message         `json:"messages"`                   // Array of conversation messages
