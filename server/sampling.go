@@ -33,23 +33,41 @@ func (d *DefaultHandler) GetSamplingCapability() *schema.SamplingCapability {
 
 // GetElicitationCapability returns the client's elicitation capability if available
 func (d *DefaultHandler) GetElicitationCapability() *schema.ElicitationCapability {
-	if d.ClientInitialize == nil || d.ClientInitialize.Capabilities.Elicitation == nil {
+	if d.ClientInitialize == nil {
+		d.Logger.Debug("GetElicitationCapability: ClientInitialize is nil")
 		return nil
 	}
+
+	if d.ClientInitialize.Capabilities.Elicitation == nil {
+		d.Logger.Debug("GetElicitationCapability: Elicitation map is nil")
+		return nil
+	}
+
+	d.Logger.Debug("GetElicitationCapability: parsing capabilities", "raw_map", d.ClientInitialize.Capabilities.Elicitation)
 
 	// Parse the map into a strongly-typed capability
 	cap := &schema.ElicitationCapability{}
 	if enabled, ok := d.ClientInitialize.Capabilities.Elicitation["enabled"].(bool); ok {
 		cap.Enabled = enabled
+		d.Logger.Debug("GetElicitationCapability: found enabled field", "value", enabled)
+	} else {
+		d.Logger.Debug("GetElicitationCapability: enabled field not found or wrong type",
+			"enabled_raw", d.ClientInitialize.Capabilities.Elicitation["enabled"])
 	}
+
 	if modes, ok := d.ClientInitialize.Capabilities.Elicitation["supportedModes"].([]interface{}); ok {
 		for _, mode := range modes {
 			if modeStr, ok := mode.(string); ok {
 				cap.SupportedModes = append(cap.SupportedModes, modeStr)
 			}
 		}
+		d.Logger.Debug("GetElicitationCapability: found supportedModes", "modes", cap.SupportedModes)
+	} else {
+		d.Logger.Debug("GetElicitationCapability: supportedModes not found or wrong type",
+			"supportedModes_raw", d.ClientInitialize.Capabilities.Elicitation["supportedModes"])
 	}
 
+	d.Logger.Debug("GetElicitationCapability: returning capability", "enabled", cap.Enabled, "modes", cap.SupportedModes)
 	return cap
 }
 
