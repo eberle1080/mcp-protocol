@@ -3,7 +3,7 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/viant/jsonrpc"
+	"github.com/eberle1080/jsonrpc"
 )
 
 // MustParseParams parses JSON-RPC request parameters into the provided struct.

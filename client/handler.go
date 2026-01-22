@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"github.com/viant/jsonrpc"
+	"github.com/eberle1080/jsonrpc"
 )
 
 // Handler extends Operations with support for JSON-RPC notifications.

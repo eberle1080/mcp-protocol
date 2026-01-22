@@ -2,8 +2,8 @@ package client
 
 import (
 	"context"
-	"github.com/viant/jsonrpc"
-	"github.com/viant/jsonrpc/transport"
+	"github.com/eberle1080/jsonrpc"
+	"github.com/eberle1080/jsonrpc/transport"
 	"github.com/eberle1080/mcp-protocol/schema"
 )
 

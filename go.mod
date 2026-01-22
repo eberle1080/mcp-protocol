@@ -1,11 +1,11 @@
 module github.com/eberle1080/mcp-protocol
 
-go 1.23.8
+go 1.24.0
 
 require (
+	github.com/eberle1080/jsonrpc v0.0.0-20260122182403-483e047886dd
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/stretchr/testify v1.10.0
-	github.com/viant/jsonrpc v0.7.5
 	golang.org/x/oauth2 v0.30.0
 )
 

@@ -47,7 +47,7 @@ package example
 import (
   "context"
   "fmt"
-  "github.com/viant/jsonrpc"
+  "github.com/eberle1080/jsonrpc"
   "github.com/eberle1080/mcp-protocol/schema"
   serverproto "github.com/viant/mcp-protocol/server"
   "github.com/viant/mcp/server"
@@ -97,8 +97,8 @@ package myimpl
 
 import (
   "context"
-  "github.com/viant/jsonrpc"
-  "github.com/viant/jsonrpc/transport"
+  "github.com/eberle1080/jsonrpc"
+  "github.com/eberle1080/jsonrpc/transport"
   "github.com/eberle1080/mcp-protocol/client"
   "github.com/eberle1080/mcp-protocol/logger"
   "github.com/eberle1080/mcp-protocol/schema"

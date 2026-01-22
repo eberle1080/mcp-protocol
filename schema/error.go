@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/viant/jsonrpc"
+import "github.com/eberle1080/jsonrpc"
 
 const (
    // Unauthorized indicates authentication is required

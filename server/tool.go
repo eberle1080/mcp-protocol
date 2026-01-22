@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/viant/jsonrpc"
+	"github.com/eberle1080/jsonrpc"
 	"github.com/eberle1080/mcp-protocol/schema"
 )
 
