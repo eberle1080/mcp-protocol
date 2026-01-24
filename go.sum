@@ -3,6 +3,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/eberle1080/jsonrpc v0.0.0-20260122183942-47e591c41e9c h1:IoJbXE/MJBm/bOUWYyO0xGFDIUvVpM+YvNT0T/wOPCA=
 github.com/eberle1080/jsonrpc v0.0.0-20260122183942-47e591c41e9c/go.mod h1:QKNrKOq6K/th4y6nojNA66Qh4bUs9DINxjXKJhn9ZR0=
+github.com/eberle1080/jsonrpc v0.0.0-20260124032003-c5a08751c92b h1:SFIXgB1A6b3m+DFw4qs8kgp8id2rFjzZjEV+g7PRGBE=
+github.com/eberle1080/jsonrpc v0.0.0-20260124032003-c5a08751c92b/go.mod h1:QKNrKOq6K/th4y6nojNA66Qh4bUs9DINxjXKJhn9ZR0=
 github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=
 github.com/go-viper/mapstructure/v2 v2.2.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
