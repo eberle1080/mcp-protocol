@@ -93,10 +93,8 @@ func (d *DefaultHandler) Unsubscribe(ctx context.Context, jRequest *jsonrpc.Type
 func (d *DefaultHandler) ListTools(ctx context.Context, jRequest *jsonrpc.TypedRequest[*schema.ListToolsRequest]) (*schema.ListToolsResult, *jsonrpc.Error) {
 	// Return the list of registered tools
 	tools := d.ListRegisteredTools()
-	if d.ClientInitialize == nil {
-		return nil, &jsonrpc.Error{Code: jsonrpc.InternalError, Message: "uninilalized"}
-	}
-	if !schema.IsProtocolNewer(d.ClientInitialize.ProtocolVersion, "2025-03-26") {
+	// Only clean output schema if client has been initialized and protocol version check needed
+	if d.ClientInitialize != nil && !schema.IsProtocolNewer(d.ClientInitialize.ProtocolVersion, "2025-03-26") {
 		//needs to clean output schema, it was introduced after version "2025-03-26"
 		for i := range tools {
 			tool := &tools[i]
