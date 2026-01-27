@@ -74,6 +74,16 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 func (d *DefaultHandler) ListResources(ctx context.Context, request *jsonrpc.TypedRequest[*schema.ListResourcesRequest]) (*schema.ListResourcesResult, *jsonrpc.Error) {
 	// Return list of registered resources
 	resources := d.ListRegisteredResources()
+
+	// Debug logging
+	if d.Logger != nil {
+		d.Logger.Info(ctx, map[string]interface{}{
+			"message":       "ListResources called",
+			"count":         len(resources),
+			"registry_size": d.ResourceRegistry.Size(),
+		})
+	}
+
 	return &schema.ListResourcesResult{
 		Resources: resources,
 	}, nil
