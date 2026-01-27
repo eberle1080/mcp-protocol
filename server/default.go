@@ -21,6 +21,10 @@ type DefaultHandler struct {
 	ClientInitialize   *schema.InitializeRequestParams
 	Subscription       *syncmap.Map[string, bool]
 	ServerCapabilities *schema.ServerCapabilities
+	// Configuration for listChanged capabilities
+	ToolsListChanged     *bool
+	ResourcesListChanged *bool
+	PromptsListChanged   *bool
 	*Registry
 }
 
@@ -32,13 +36,34 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 		result.Capabilities = *d.ServerCapabilities
 	}
 	if d.ToolRegistry.Size() > 0 {
-		result.Capabilities.Tools = &schema.ServerCapabilitiesTools{}
+		listChanged := d.ToolsListChanged
+		if listChanged == nil {
+			trueValue := true
+			listChanged = &trueValue
+		}
+		result.Capabilities.Tools = &schema.ServerCapabilitiesTools{
+			ListChanged: listChanged,
+		}
 	}
 	if d.ResourceRegistry.Size() > 0 {
-		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{}
+		listChanged := d.ResourcesListChanged
+		if listChanged == nil {
+			trueValue := true
+			listChanged = &trueValue
+		}
+		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{
+			ListChanged: listChanged,
+		}
 	}
 	if d.Prompts.Size() > 0 {
-		result.Capabilities.Prompts = &schema.ServerCapabilitiesPrompts{}
+		listChanged := d.PromptsListChanged
+		if listChanged == nil {
+			trueValue := true
+			listChanged = &trueValue
+		}
+		result.Capabilities.Prompts = &schema.ServerCapabilitiesPrompts{
+			ListChanged: listChanged,
+		}
 	}
 
 	d.Client.Init(ctx, &d.ClientInitialize.Capabilities)
