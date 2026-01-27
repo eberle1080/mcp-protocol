@@ -45,10 +45,7 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 			ListChanged: listChanged,
 		}
 	}
-	resourceCount := d.ResourceRegistry.Size()
-	templateCount := d.ResourceTemplateRegistry.Size()
-	fmt.Printf("DEBUG INIT: ResourceRegistry.Size() = %d, ResourceTemplateRegistry.Size() = %d, Total = %d\n", resourceCount, templateCount, resourceCount+templateCount)
-	if resourceCount > 0 || templateCount > 0 {
+	if d.ResourceRegistry.Size() > 0 || d.ResourceTemplateRegistry.Size() > 0 {
 		listChanged := d.ResourcesListChanged
 		if listChanged == nil {
 			trueValue := true
@@ -56,14 +53,6 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 		}
 		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{
 			ListChanged: listChanged,
-		}
-		fmt.Printf("DEBUG INIT: Resources capability advertised with %d static resources, %d templates\n", resourceCount, templateCount)
-		if d.Logger != nil {
-			d.Logger.Info(ctx, map[string]interface{}{
-				"message":         "Resources capability advertised",
-				"registry_size":   resourceCount,
-				"list_changed":    *listChanged,
-			})
 		}
 	}
 	if d.Prompts.Size() > 0 {
@@ -85,16 +74,6 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 func (d *DefaultHandler) ListResources(ctx context.Context, request *jsonrpc.TypedRequest[*schema.ListResourcesRequest]) (*schema.ListResourcesResult, *jsonrpc.Error) {
 	// Return list of registered resources
 	resources := d.ListRegisteredResources()
-
-	// Debug logging
-	if d.Logger != nil {
-		d.Logger.Info(ctx, map[string]interface{}{
-			"message":       "ListResources called",
-			"count":         len(resources),
-			"registry_size": d.ResourceRegistry.Size(),
-		})
-	}
-
 	return &schema.ListResourcesResult{
 		Resources: resources,
 	}, nil
