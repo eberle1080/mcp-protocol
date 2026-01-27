@@ -54,6 +54,13 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{
 			ListChanged: listChanged,
 		}
+		if d.Logger != nil {
+			d.Logger.Info(ctx, map[string]interface{}{
+				"message":         "Resources capability advertised",
+				"registry_size":   d.ResourceRegistry.Size(),
+				"list_changed":    *listChanged,
+			})
+		}
 	}
 	if d.Prompts.Size() > 0 {
 		listChanged := d.PromptsListChanged
