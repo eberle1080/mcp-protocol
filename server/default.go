@@ -45,7 +45,9 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 			ListChanged: listChanged,
 		}
 	}
-	if d.ResourceRegistry.Size() > 0 {
+	resourceCount := d.ResourceRegistry.Size()
+	fmt.Printf("DEBUG INIT: ResourceRegistry.Size() = %d\n", resourceCount)
+	if resourceCount > 0 {
 		listChanged := d.ResourcesListChanged
 		if listChanged == nil {
 			trueValue := true
@@ -54,10 +56,11 @@ func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.Initialize
 		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{
 			ListChanged: listChanged,
 		}
+		fmt.Printf("DEBUG INIT: Resources capability advertised with %d resources\n", resourceCount)
 		if d.Logger != nil {
 			d.Logger.Info(ctx, map[string]interface{}{
 				"message":         "Resources capability advertised",
-				"registry_size":   d.ResourceRegistry.Size(),
+				"registry_size":   resourceCount,
 				"list_changed":    *listChanged,
 			})
 		}
