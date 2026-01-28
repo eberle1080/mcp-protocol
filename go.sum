@@ -1,8 +1,8 @@
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/eberle1080/jsonrpc v0.0.0-20260124035545-d76dafe469a0 h1:SnxuxBogUWhtRctbN5/GF3jG2tUP/jnq/IPZvIumbc0=
-github.com/eberle1080/jsonrpc v0.0.0-20260124035545-d76dafe469a0/go.mod h1:QKNrKOq6K/th4y6nojNA66Qh4bUs9DINxjXKJhn9ZR0=
+github.com/eberle1080/jsonrpc v0.0.0-20260128005140-00c6f4b1b5c1 h1:26gP71+Bd53yLcC2zJwE/P3mM0ZhD0epPhQ6K4hHlMA=
+github.com/eberle1080/jsonrpc v0.0.0-20260128005140-00c6f4b1b5c1/go.mod h1:QKNrKOq6K/th4y6nojNA66Qh4bUs9DINxjXKJhn9ZR0=
 github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=
 github.com/go-viper/mapstructure/v2 v2.2.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
