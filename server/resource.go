@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"regexp"
+
 	"github.com/eberle1080/jsonrpc"
 	"github.com/eberle1080/mcp-protocol/schema"
 )
@@ -60,15 +62,50 @@ func (d *Registry) ListRegisteredResourceTemplates() []schema.ResourceTemplate {
 	return list
 }
 
+// matchesTemplate checks if a URI matches a URI template pattern.
+// Converts RFC 6570 template syntax like "amp://providers/{provider}" to a regex
+// and checks if the URI matches.
+func matchesTemplate(uri, template string) bool {
+	// Escape special regex characters except for {}
+	pattern := regexp.QuoteMeta(template)
+
+	// Replace {variable} with a regex pattern that matches any non-empty string
+	// {variable} becomes ([^/]+) to match anything except slashes
+	pattern = regexp.MustCompile(`\\\{[^}]+\\\}`).ReplaceAllString(pattern, `([^/]+)`)
+
+	// Anchor the pattern to match the entire URI
+	pattern = "^" + pattern + "$"
+
+	matched, _ := regexp.MatchString(pattern, uri)
+	return matched
+}
+
 // getResourceHandler retrieves the handler for a registered resource on this handler.
 func (d *Registry) getResourceHandler(uri string) (ResourceHandlerFunc, bool) {
-	// Check template handlers first
-	if templateEntry, ok := d.ResourceTemplateRegistry.Get(uri); ok {
-		return templateEntry.Handler, true
-	}
+	// First try exact match for static resources
 	if resourceEntry, ok := d.ResourceRegistry.Get(uri); ok {
 		return resourceEntry.Handler, true
 	}
+
+	// Then try exact match for templates (unlikely but possible)
+	if templateEntry, ok := d.ResourceTemplateRegistry.Get(uri); ok {
+		return templateEntry.Handler, true
+	}
+
+	// Finally, iterate through templates and try pattern matching
+	var matchedHandler ResourceHandlerFunc
+	d.ResourceTemplateRegistry.Range(func(templatePattern string, entry *ResourceTemplateEntry) bool {
+		if matchesTemplate(uri, templatePattern) {
+			matchedHandler = entry.Handler
+			return false // Stop iteration
+		}
+		return true // Continue iteration
+	})
+
+	if matchedHandler != nil {
+		return matchedHandler, true
+	}
+
 	return nil, false
 }
 

@@ -5,6 +5,8 @@ github.com/eberle1080/jsonrpc v0.0.0-20260128005140-00c6f4b1b5c1 h1:26gP71+Bd53y
 github.com/eberle1080/jsonrpc v0.0.0-20260128005140-00c6f4b1b5c1/go.mod h1:QKNrKOq6K/th4y6nojNA66Qh4bUs9DINxjXKJhn9ZR0=
 github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=
 github.com/go-viper/mapstructure/v2 v2.2.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/jtacoma/uritemplates v1.0.0 h1:xwx5sBF7pPAb0Uj8lDC1Q/aBPpOFyQza7OC705ZlLCo=
+github.com/jtacoma/uritemplates v1.0.0/go.mod h1:IhIICdE9OcvgUnGwTtJxgBQ+VrTrti5PcbLVSJianO8=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=
