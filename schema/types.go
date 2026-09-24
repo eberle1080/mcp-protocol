@@ -5437,7 +5437,7 @@ type Result struct {
 	// `resultType`), the client MUST treat the absent field as `"complete"`.
 	ResultType string `json:"resultType" yaml:"resultType" mapstructure:"resultType"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Extends {@link MetaObject} with additional result-specific fields. All key
@@ -5988,7 +5988,7 @@ type ToolInputSchema struct {
 	// Type corresponds to the JSON schema field "type".
 	Type string `json:"type" yaml:"type" mapstructure:"type"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // ToolInputSchemaProperties preserves the root package's pre-July API while
@@ -6043,7 +6043,7 @@ type ToolOutputSchema struct {
 	// API. July output schemas may omit it.
 	Type string `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Definition for a tool the client can call.

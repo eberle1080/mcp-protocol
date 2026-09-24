@@ -919,7 +919,7 @@ type ElicitRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 type ElicitRequestParamsMode string
@@ -1096,7 +1096,7 @@ type ElicitationRequiredErrorErrorData struct {
 	// Elicitations corresponds to the JSON schema field "elicitations".
 	Elicitations []URLElicitRequestParams `json:"elicitations" yaml:"elicitations" mapstructure:"elicitations"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1326,7 +1326,7 @@ type FormElicitRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // A restricted subset of JSON Schema.
@@ -1687,7 +1687,7 @@ type InitializedNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1798,7 +1798,7 @@ type JSONRPCNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2429,7 +2429,7 @@ type NotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2741,7 +2741,7 @@ type PromptListChangedNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2996,7 +2996,7 @@ type RequestParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta *RequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/draft/basic/index#general-fields] for notes on _meta usage.
@@ -3007,7 +3007,7 @@ type RequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3593,7 +3593,7 @@ type URLElicitRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 type URLElicitRequestParams struct {
@@ -3755,7 +3755,7 @@ type Result struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Present if the server offers any prompt templates.
@@ -3783,7 +3783,7 @@ type ResourceListChangedNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Capabilities that a server may support. Known capabilities are defined here, in
@@ -3887,7 +3887,7 @@ type RootsListChangedNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // A notification from the client to the server, informing it that the list of
@@ -4114,7 +4114,7 @@ type ToolListChangedNotificationParams struct {
 	// See [specification/draft/basic/index#general-fields] for notes on _meta usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // An optional notification from the server to the client, informing it that the

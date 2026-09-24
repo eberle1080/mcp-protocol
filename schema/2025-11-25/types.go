@@ -247,7 +247,7 @@ type CallToolRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -640,7 +640,7 @@ type CompleteRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Identifies a prompt.
@@ -926,7 +926,7 @@ type CreateMessageRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1218,7 +1218,7 @@ type ElicitRequestFormParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // A restricted subset of JSON Schema.
@@ -1325,7 +1325,7 @@ type ElicitRequestURLParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1676,7 +1676,7 @@ type GetPromptRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1828,7 +1828,7 @@ type GetTaskPayloadResult struct {
 	// notes on `_meta` usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // A request to retrieve the state of a task.
@@ -2143,7 +2143,7 @@ type InitializeRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3253,7 +3253,7 @@ type PaginatedRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3659,7 +3659,7 @@ type ReadResourceRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3834,7 +3834,7 @@ type RequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -4080,7 +4080,7 @@ type ResourceRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -4294,7 +4294,7 @@ type Result struct {
 	// notes on `_meta` usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 type Role string
@@ -4647,7 +4647,7 @@ type SetLevelRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -4808,7 +4808,7 @@ type SubscribeRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -4912,7 +4912,7 @@ type TaskAugmentedRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Metadata for augmenting a request with task execution.
@@ -5709,7 +5709,7 @@ type URLElicitationRequiredErrorErrorData struct {
 	// Elicitations corresponds to the JSON schema field "elicitations".
 	Elicitations []ElicitRequestURLParams `json:"elicitations" yaml:"elicitations" mapstructure:"elicitations"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -5818,7 +5818,7 @@ type UnsubscribeRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Parameters for a `resources/unsubscribe` request.

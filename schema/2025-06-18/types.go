@@ -1424,7 +1424,7 @@ type InitializedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1536,7 +1536,7 @@ type JSONRPCNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1580,7 +1580,7 @@ type JSONRPCRequestParams struct {
 	// usage.
 	Meta *JSONRPCRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -1592,7 +1592,7 @@ type JSONRPCRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1877,7 +1877,7 @@ type ListRootsRequestParams struct {
 	// usage.
 	Meta *ListRootsRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -1889,7 +1889,7 @@ type ListRootsRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2213,7 +2213,7 @@ type NotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2357,7 +2357,7 @@ type PingRequestParams struct {
 	// usage.
 	Meta *PingRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -2369,7 +2369,7 @@ type PingRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2548,7 +2548,7 @@ type PromptListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2806,7 +2806,7 @@ type RequestParams struct {
 	// usage.
 	Meta *RequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -2818,7 +2818,7 @@ type RequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3001,7 +3001,7 @@ type ResourceListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3192,7 +3192,7 @@ type Result struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 type Role string
@@ -3279,7 +3279,7 @@ type RootsListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3874,7 +3874,7 @@ type ToolListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // An optional notification from the server to the client, informing it that the

@@ -5385,7 +5385,7 @@ type Result struct {
 	// `resultType`), the client MUST treat the absent field as `"complete"`.
 	ResultType string `json:"resultType" yaml:"resultType" mapstructure:"resultType"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Extends {@link MetaObject} with additional result-specific fields. All key
@@ -5928,7 +5928,7 @@ type ToolInputSchema struct {
 	// Type corresponds to the JSON schema field "type".
 	Type string `json:"type" yaml:"type" mapstructure:"type"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -5967,7 +5967,7 @@ type ToolOutputSchema struct {
 	// Schema corresponds to the JSON schema field "$schema".
 	Schema *string `json:"$schema,omitempty" yaml:"$schema,omitempty" mapstructure:"$schema,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // Definition for a tool the client can call.
