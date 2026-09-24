@@ -32,42 +32,50 @@ type DefaultHandler struct {
 func (d *DefaultHandler) Initialize(ctx context.Context, init *schema.InitializeRequestParams, result *schema.InitializeResult) {
 	d.ClientInitialize = init
 	d.Client.Init(ctx, &d.ClientInitialize.Capabilities)
+	d.populateCapabilities(&result.Capabilities)
+}
+
+// Discover populates July server capabilities without retaining client state.
+func (d *DefaultHandler) Discover(_ context.Context, result *schema.DiscoverResult) {
+	d.populateCapabilities(&result.Capabilities)
+}
+
+func (d *DefaultHandler) populateCapabilities(capabilities *schema.ServerCapabilities) {
 	if d.ServerCapabilities != nil {
-		result.Capabilities = *d.ServerCapabilities
+		*capabilities = *d.ServerCapabilities
 	}
 	if d.ToolRegistry.Size() > 0 {
-		listChanged := d.ToolsListChanged
-		if listChanged == nil {
-			trueValue := true
-			listChanged = &trueValue
-		}
-		result.Capabilities.Tools = &schema.ServerCapabilitiesTools{
-			ListChanged: listChanged,
-		}
+		capabilities.Tools = &schema.ServerCapabilitiesTools{ListChanged: listChangedOrDefault(d.ToolsListChanged)}
 	}
 	if d.ResourceRegistry.Size() > 0 || d.ResourceTemplateRegistry.Size() > 0 {
-		listChanged := d.ResourcesListChanged
-		if listChanged == nil {
-			trueValue := true
-			listChanged = &trueValue
-		}
-		result.Capabilities.Resources = &schema.ServerCapabilitiesResources{
-			ListChanged: listChanged,
-		}
+		capabilities.Resources = &schema.ServerCapabilitiesResources{ListChanged: listChangedOrDefault(d.ResourcesListChanged)}
 	}
 	if d.Prompts.Size() > 0 {
-		listChanged := d.PromptsListChanged
-		if listChanged == nil {
-			trueValue := true
-			listChanged = &trueValue
-		}
-		result.Capabilities.Prompts = &schema.ServerCapabilitiesPrompts{
-			ListChanged: listChanged,
+		capabilities.Prompts = &schema.ServerCapabilitiesPrompts{ListChanged: listChangedOrDefault(d.PromptsListChanged)}
+	}
+	// Never inherit a skills claim from an unrelated catalog or shared map.
+	extensions := make(map[string]map[string]interface{}, len(capabilities.Extensions)+1)
+	for key, value := range capabilities.Extensions {
+		if key != schema.SkillsExtension {
+			extensions[key] = value
 		}
 	}
+	if d.skills != nil && d.skills.Size() > 0 {
+		extensions[schema.SkillsExtension] = map[string]interface{}{}
+		if capabilities.Resources == nil {
+			capabilities.Resources = &schema.ServerCapabilitiesResources{ListChanged: listChangedOrDefault(d.ResourcesListChanged)}
+		}
+	}
+	capabilities.Extensions = extensions
+}
 
-	d.Client.Init(ctx, &d.ClientInitialize.Capabilities)
-
+// listChangedOrDefault returns the configured listChanged flag, defaulting to true.
+func listChangedOrDefault(configured *bool) *bool {
+	if configured != nil {
+		return configured
+	}
+	enabled := true
+	return &enabled
 }
 
 // ListResources returns method-not-found by default.
@@ -92,6 +100,9 @@ func (d *DefaultHandler) ListResourceTemplates(ctx context.Context, request *jso
 func (d *DefaultHandler) ReadResource(ctx context.Context, jRequest *jsonrpc.TypedRequest[*schema.ReadResourceRequest]) (*schema.ReadResourceResult, *jsonrpc.Error) {
 	request := jRequest.Request
 	// Delegate to registered resource handler
+	if result, err, ok := d.ReadStaticSkillResource(ctx, request); ok {
+		return result, err
+	}
 	handler, ok := d.getResourceHandler(request.Params.Uri)
 	if !ok {
 		return nil, jsonrpc.NewMethodNotFound(fmt.Sprintf("resource %v not found", request.Params.Uri), nil)
@@ -118,8 +129,14 @@ func (d *DefaultHandler) Unsubscribe(ctx context.Context, jRequest *jsonrpc.Type
 func (d *DefaultHandler) ListTools(ctx context.Context, jRequest *jsonrpc.TypedRequest[*schema.ListToolsRequest]) (*schema.ListToolsResult, *jsonrpc.Error) {
 	// Return the list of registered tools
 	tools := d.ListRegisteredTools()
-	// Only clean output schema if client has been initialized and protocol version check needed
-	if d.ClientInitialize != nil && !schema.IsProtocolNewer(d.ClientInitialize.ProtocolVersion, "2025-03-26") {
+	protocolVersion := jRequest.Request.Params.Meta.IoModelcontextprotocolProtocolVersion
+	if protocolVersion == "" && d.ClientInitialize != nil {
+		protocolVersion = d.ClientInitialize.ProtocolVersion
+	}
+	// Strip output schemas only for clients known to predate them (2025-03-26 and older). An
+	// unknown version (no per-request meta and no initialize yet) keeps the full tool list
+	// rather than failing the call.
+	if protocolVersion != "" && !schema.IsProtocolNewer(protocolVersion, "2025-03-26") {
 		//needs to clean output schema, it was introduced after version "2025-03-26"
 		for i := range tools {
 			tool := &tools[i]
@@ -189,13 +206,17 @@ func (d *DefaultHandler) Implements(method string) bool {
 // NewDefaultHandler creates a new DefaultHandler with initialized registries.
 // You can then call RegisterResource, RegisterTool, etc., on it before running the server.
 func NewDefaultHandler(notifier transport.Notifier, logger logger.Logger, client client.Operations) *DefaultHandler {
-	return &DefaultHandler{
+	ret := &DefaultHandler{
 		Notifier:     notifier,
 		Logger:       logger,
 		Client:       client,
 		Subscription: syncmap.NewMap[string, bool](),
 		Registry:     NewRegistry(),
 	}
+	// List resource templates is safe to expose by default and returns an empty list
+	// when no templates are registered.
+	ret.Methods.Put(schema.MethodResourcesTemplatesList, true)
+	return ret
 }
 
 func WithDefaultHandler(ctx context.Context, options ...Option) NewHandler {

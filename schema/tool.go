@@ -174,6 +174,8 @@ func WithNullableHook(hook func(field reflect.StructField) *bool) StructToProper
 }
 
 // StructToProperties converts a struct type into MCP InputSchema properties and required fields.
+// Fields tagged with mcp:"-" are excluded from the generated schema without
+// affecting their JSON encoding behavior.
 // It accepts optional StructToPropertiesOption to customize behavior (e.g., skipping fields, required logic, format overrides).
 func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolInputSchemaProperties, []string) {
 	var opt structToPropertiesOptions
@@ -196,6 +198,9 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 		// Parse struct tags for json and format.
 		jsonTag := field.Tag.Get("json")
 		if jsonTag == "-" {
+			continue
+		}
+		if field.Tag.Get("mcp") == "-" {
 			continue
 		}
 
@@ -277,6 +282,9 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 				fieldSchema["desc"] = desc
 			}
 		}
+		if example, ok := parseFieldExample(field); ok {
+			fieldSchema["example"] = example
+		}
 
 		if choice := field.Tag.Get("choice"); choice != "" {
 			re := regexp.MustCompile(`choice:"([^"]+)"`)
@@ -330,6 +338,18 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 	}
 
 	return properties, required
+}
+
+func parseFieldExample(field reflect.StructField) (interface{}, bool) {
+	raw := strings.TrimSpace(field.Tag.Get("example"))
+	if raw == "" {
+		return nil, false
+	}
+	var parsed interface{}
+	if err := json.Unmarshal([]byte(raw), &parsed); err == nil {
+		return parsed, true
+	}
+	return raw, true
 }
 
 func (s *ToolInputSchema) Load(v any, options ...StructToPropertiesOption) error {

@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -120,6 +121,41 @@ func TestStructToProperties_FieldMetadata(t *testing.T) {
 	}
 }
 
+func TestStructToProperties_FieldExample(t *testing.T) {
+	type S struct {
+		Query map[string]interface{} `json:"query,omitempty" example:"{\"id\":null,\"filter\":{\"@type\":\"string\",\"filter\":\"\"}}"`
+		Tags  []string               `json:"tags,omitempty" example:"[\"CONNECTED_TV\",\"VIDEO\"]"`
+		Name  string                 `json:"name,omitempty" example:"IRIS_SEGMENTS"`
+	}
+	props, _ := StructToProperties(reflect.TypeOf(S{}))
+
+	query := prop(props, "query")
+	if query == nil {
+		t.Fatalf("missing query prop")
+	}
+	example, ok := query["example"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected object example, got: %#v", query["example"])
+	}
+	if example["id"] != nil {
+		t.Fatalf("expected null id, got: %#v", example["id"])
+	}
+
+	tags := prop(props, "tags")
+	if tags == nil {
+		t.Fatalf("missing tags prop")
+	}
+	tagExample, ok := tags["example"].([]interface{})
+	if !ok || len(tagExample) != 2 || tagExample[0] != "CONNECTED_TV" {
+		t.Fatalf("unexpected tags example: %#v", tags["example"])
+	}
+
+	name := prop(props, "name")
+	if name == nil || name["example"] != "IRIS_SEGMENTS" {
+		t.Fatalf("unexpected name example: %#v", name)
+	}
+}
+
 // Test: required vs omitempty and explicit required tags.
 func TestStructToProperties_RequiredLogic(t *testing.T) {
 	type S struct {
@@ -152,6 +188,32 @@ func TestStructToProperties_InternalSkip(t *testing.T) {
 	}
 	if prop(props, "hidden") != nil {
 		t.Fatalf("expected hidden prop to be skipped")
+	}
+}
+
+func TestStructToProperties_MCPSkip(t *testing.T) {
+	type S struct {
+		Visible string `json:"visible"`
+		Hidden  string `json:"hidden" mcp:"-"`
+	}
+
+	props, req := StructToProperties(reflect.TypeOf(S{}))
+	if prop(props, "visible") == nil {
+		t.Fatalf("expected visible prop present")
+	}
+	if prop(props, "hidden") != nil {
+		t.Fatalf("expected mcp-tagged prop to be skipped")
+	}
+	if containsAll(req, "hidden") {
+		t.Fatalf("expected mcp-tagged prop not to be required, got: %v", req)
+	}
+
+	data, err := json.Marshal(S{Visible: "public", Hidden: "private"})
+	if err != nil {
+		t.Fatalf("marshal value: %v", err)
+	}
+	if string(data) != `{"visible":"public","hidden":"private"}` {
+		t.Fatalf("expected mcp tag not to affect JSON encoding, got: %s", data)
 	}
 }
 

@@ -3,6 +3,7 @@
 package schema
 
 import "encoding/json"
+import "github.com/eberle1080/mcp-protocol/schema/internal/resourcecontent"
 import "errors"
 import "fmt"
 import "github.com/go-viper/mapstructure/v2"
@@ -670,8 +671,8 @@ func (j *CompleteRequestParamsRef) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var completeRequestParamsRef_0 CompleteRequestParamsRef_0
-	var completeRequestParamsRef_1 CompleteRequestParamsRef_1
+	var completeRequestParamsRef_0 PromptReference
+	var completeRequestParamsRef_1 ResourceTemplateReference
 	var errs []error
 	if err := completeRequestParamsRef_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -1072,11 +1073,11 @@ func (j *CreateMessageResultContent) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var createMessageResultContent_0 CreateMessageResultContent_0
-	var createMessageResultContent_1 CreateMessageResultContent_1
-	var createMessageResultContent_2 CreateMessageResultContent_2
-	var createMessageResultContent_3 CreateMessageResultContent_3
-	var createMessageResultContent_4 CreateMessageResultContent_4
+	var createMessageResultContent_0 TextContent
+	var createMessageResultContent_1 ImageContent
+	var createMessageResultContent_2 AudioContent
+	var createMessageResultContent_3 ToolUseContent
+	var createMessageResultContent_4 ToolResultContent
 	var errs []error
 	if err := createMessageResultContent_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -1093,8 +1094,7 @@ func (j *CreateMessageResultContent) UnmarshalJSON(value []byte) error {
 	if err := createMessageResultContent_4.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
 	}
-	// createMessageResultContent_5 is interface{} and accepts any JSON, so no validation needed
-	if len(errs) == 5 {
+	if len(errs) == 6 {
 		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
 	}
 	type Plain CreateMessageResultContent
@@ -1173,9 +1173,11 @@ type ElicitRequest struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params ElicitRequestParams `json:"params" yaml:"params" mapstructure:"params"`
+	// ElicitRequestParamsInline corresponds to the JSON schema field "params".
+	ElicitRequestParamsInline ElicitRequestElicitRequestParamsInline `json:"params" yaml:"params" mapstructure:"params"`
 }
+
+type ElicitRequestElicitRequestParamsInline interface{}
 
 // The parameters for a request to elicit non-sensitive information from the user
 // via a form in the client.
@@ -1277,11 +1279,9 @@ func (j *ElicitRequestFormParams) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type ElicitRequestParams interface{}
-
 // The parameters for a request to elicit additional information from the user via
 // the client.
-type ElicitRequestParams_1 interface{}
+type ElicitRequestParams interface{}
 
 // The parameters for a request to elicit information from the user via a URL in
 // the client.
@@ -1531,6 +1531,7 @@ type EmbeddedResource struct {
 }
 
 type EmbeddedResourceResource struct {
+	contentSelection resourcecontent.Selection
 	// See [General fields: `_meta`](/specification/2025-11-25/basic/index#meta) for
 	// notes on `_meta` usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
@@ -1555,8 +1556,12 @@ func (j *EmbeddedResourceResource) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var embeddedResourceResource_0 EmbeddedResourceResource_0
-	var embeddedResourceResource_1 EmbeddedResourceResource_1
+	selection, err := resourcecontent.FromObject(raw)
+	if err != nil {
+		return err
+	}
+	var embeddedResourceResource_0 TextResourceContents
+	var embeddedResourceResource_1 BlobResourceContents
 	var errs []error
 	if err := embeddedResourceResource_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -1573,6 +1578,7 @@ func (j *EmbeddedResourceResource) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	*j = EmbeddedResourceResource(plain)
+	j.contentSelection = selection
 	return nil
 }
 
@@ -2320,8 +2326,8 @@ type JSONRPCNotification struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	// NotificationParamsInline corresponds to the JSON schema field "params".
+	NotificationParamsInline map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2479,8 +2485,8 @@ type ListPromptsRequest struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params *PaginatedRequestParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	// PaginatedRequestParamsInline corresponds to the JSON schema field "params".
+	PaginatedRequestParamsInline *PaginatedRequestParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2551,8 +2557,8 @@ type ListResourceTemplatesRequest struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params *PaginatedRequestParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	// PaginatedRequestParamsInline corresponds to the JSON schema field "params".
+	PaginatedRequestParamsInline *PaginatedRequestParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3117,8 +3123,8 @@ type Notification struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	// RequestParamsInline corresponds to the JSON schema field "params".
+	RequestParamsInline map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
 type NotificationParams struct {
@@ -3736,8 +3742,8 @@ func (j *ReadResourceResultContentsElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var readResourceResultContentsElem_0 ReadResourceResultContentsElem_0
-	var readResourceResultContentsElem_1 ReadResourceResultContentsElem_1
+	var readResourceResultContentsElem_0 TextResourceContents
+	var readResourceResultContentsElem_1 BlobResourceContents
 	var errs []error
 	if err := readResourceResultContentsElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -3805,8 +3811,8 @@ type Request struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	// RequestParamsInline corresponds to the JSON schema field "params".
+	RequestParamsInline map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
 // A uniquely identifying ID for a request in JSON-RPC.
@@ -4474,11 +4480,11 @@ func (j *SamplingMessageContent) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var samplingMessageContent_0 SamplingMessageContent_0
-	var samplingMessageContent_1 SamplingMessageContent_1
-	var samplingMessageContent_2 SamplingMessageContent_2
-	var samplingMessageContent_3 SamplingMessageContent_3
-	var samplingMessageContent_4 SamplingMessageContent_4
+	var samplingMessageContent_0 TextContent
+	var samplingMessageContent_1 ImageContent
+	var samplingMessageContent_2 AudioContent
+	var samplingMessageContent_3 ToolUseContent
+	var samplingMessageContent_4 ToolResultContent
 	var errs []error
 	if err := samplingMessageContent_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -4495,8 +4501,7 @@ func (j *SamplingMessageContent) UnmarshalJSON(value []byte) error {
 	if err := samplingMessageContent_4.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
 	}
-	// samplingMessageContent_5 is interface{} and accepts any JSON, so no validation needed
-	if len(errs) == 5 {
+	if len(errs) == 6 {
 		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
 	}
 	type Plain SamplingMessageContent
@@ -4934,14 +4939,15 @@ type TaskStatusNotification struct {
 	// Method corresponds to the JSON schema field "method".
 	Method string `json:"method" yaml:"method" mapstructure:"method"`
 
-	// Params corresponds to the JSON schema field "params".
-	Params TaskStatusNotificationParams `json:"params" yaml:"params" mapstructure:"params"`
+	// TaskStatusNotificationParamsInline corresponds to the JSON schema field
+	// "params".
+	TaskStatusNotificationParamsInline TaskStatusNotificationTaskStatusNotificationParamsInline `json:"params" yaml:"params" mapstructure:"params"`
 }
 
+// Parameters for a `notifications/tasks/status` notification.
 type TaskStatusNotificationParams interface{}
 
-// Parameters for a `notifications/tasks/status` notification.
-type TaskStatusNotificationParams_1 interface{}
+type TaskStatusNotificationTaskStatusNotificationParamsInline interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TaskStatusNotification) UnmarshalJSON(value []byte) error {
@@ -5139,12 +5145,6 @@ type TitledMultiSelectEnumSchemaItemsAnyOfElem struct {
 	Title string `json:"title" yaml:"title" mapstructure:"title"`
 }
 
-type SamplingMessageContent_0 = TextContent
-type CreateMessageResultContent_1 = ImageContent
-type CreateMessageResultContent_2 = AudioContent
-type CreateMessageResultContent_3 = ToolUseContent
-type CreateMessageResultContent_4 = ToolResultContent
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Tool) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -5339,8 +5339,6 @@ var enumValues_ToolExecutionTaskSupport = []interface{}{
 	"required",
 }
 
-type EmbeddedResourceResource_0 = TextResourceContents
-type EmbeddedResourceResource_1 = BlobResourceContents
 type ToolExecutionTaskSupport string
 
 // Additional properties describing a Tool to clients.
@@ -5385,9 +5383,6 @@ type ToolAnnotations struct {
 	Title *string `json:"title,omitempty" yaml:"title,omitempty" mapstructure:"title,omitempty"`
 }
 
-type ReadResourceResultContentsElem_1 = BlobResourceContents
-type ReadResourceResultContentsElem_0 = TextResourceContents
-
 // Controls tool selection behavior for sampling requests.
 type ToolChoice struct {
 	// Controls the tool use ability of the model:
@@ -5428,14 +5423,6 @@ var enumValues_ToolChoiceMode = []interface{}{
 }
 
 type ToolChoiceMode string
-
-type SamplingMessageContent_4 = ToolResultContent
-type SamplingMessageContent_3 = ToolUseContent
-type SamplingMessageContent_2 = AudioContent
-type SamplingMessageContent_1 = ImageContent
-type SamplingMessageContent_5 = SamplingMessageContent_5Elem
-type CreateMessageResultContent_0 = TextContent
-type CreateMessageResultContent_5 = CreateMessageResultContent_5Elem
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ToolResultContent) UnmarshalJSON(value []byte) error {
@@ -5574,8 +5561,6 @@ func (j *TitledMultiSelectEnumSchemaItemsAnyOfElem) UnmarshalJSON(value []byte) 
 	return nil
 }
 
-type CompleteRequestParamsRef_1 = ResourceTemplateReference
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TitledMultiSelectEnumSchemaItems) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -5593,8 +5578,6 @@ func (j *TitledMultiSelectEnumSchemaItems) UnmarshalJSON(value []byte) error {
 	*j = TitledMultiSelectEnumSchemaItems(plain)
 	return nil
 }
-
-type CompleteRequestParamsRef_0 = PromptReference
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TitledMultiSelectEnumSchema) UnmarshalJSON(value []byte) error {

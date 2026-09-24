@@ -18,10 +18,9 @@ type MyMCPServer struct {
 // ListResources implements the resources/list method.
 func (i *MyMCPServer) ListResources(
 	ctx context.Context,
-	jReq *jsonrpc.TypedRequest[*schema.ListResourcesRequest],
+	req *jsonrpc.TypedRequest[*schema.ListResourcesRequest],
 ) (*schema.ListResourcesResult, *jsonrpc.Error) {
 	// TODO: return actual resources
-	// req := jReq.Request  // Access actual request if needed
 	return &schema.ListResourcesResult{}, nil
 }
 
