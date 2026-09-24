@@ -3,6 +3,7 @@
 package schema
 
 import "encoding/json"
+import "github.com/eberle1080/mcp-protocol/schema/internal/resourcecontent"
 import "errors"
 import "fmt"
 import "reflect"
@@ -887,10 +888,10 @@ func (j *ElicitRequestParams) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	if _, ok := raw["message"]; raw != nil && !ok {
-		return fmt.Errorf("field message in ElicitRequestParams: required")
+		return fmt.Errorf("field message in Params: required")
 	}
 	if _, ok := raw["requestedSchema"]; raw != nil && !ok {
-		return fmt.Errorf("field requestedSchema in ElicitRequestParams: required")
+		return fmt.Errorf("field requestedSchema in Params: required")
 	}
 	type Plain ElicitRequestParams
 	var plain Plain
@@ -1009,6 +1010,7 @@ type EmbeddedResource struct {
 }
 
 type EmbeddedResourceResource struct {
+	contentSelection resourcecontent.Selection
 	// See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
@@ -1033,6 +1035,10 @@ func (j *EmbeddedResourceResource) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
+	selection, err := resourcecontent.FromObject(raw)
+	if err != nil {
+		return err
+	}
 	var embeddedResourceResource_0 EmbeddedResourceResource_0
 	var embeddedResourceResource_1 EmbeddedResourceResource_1
 	var errs []error
@@ -1051,6 +1057,7 @@ func (j *EmbeddedResourceResource) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	*j = EmbeddedResourceResource(plain)
+	j.contentSelection = selection
 	return nil
 }
 
@@ -1417,7 +1424,7 @@ type InitializedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1529,7 +1536,7 @@ type JSONRPCNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1573,7 +1580,7 @@ type JSONRPCRequestParams struct {
 	// usage.
 	Meta *JSONRPCRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -1585,7 +1592,7 @@ type JSONRPCRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -1870,7 +1877,7 @@ type ListRootsRequestParams struct {
 	// usage.
 	Meta *ListRootsRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -1882,7 +1889,7 @@ type ListRootsRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2206,7 +2213,7 @@ type NotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2350,7 +2357,7 @@ type PingRequestParams struct {
 	// usage.
 	Meta *PingRequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -2362,7 +2369,7 @@ type PingRequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2541,7 +2548,7 @@ type PromptListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2799,7 +2806,7 @@ type RequestParams struct {
 	// usage.
 	Meta *RequestParamsMeta `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // See [specification/2025-06-18/basic/index#general-fields] for notes on _meta
@@ -2811,7 +2818,7 @@ type RequestParamsMeta struct {
 	// notifications. The receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2994,7 +3001,7 @@ type ResourceListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3185,7 +3192,7 @@ type Result struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 type Role string
@@ -3272,7 +3279,7 @@ type RootsListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -3867,7 +3874,7 @@ type ToolListChangedNotificationParams struct {
 	// usage.
 	Meta map[string]interface{} `json:"_meta,omitempty" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
 }
 
 // An optional notification from the server to the client, informing it that the

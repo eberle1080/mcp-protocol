@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 
 	"github.com/eberle1080/mcp-protocol/schema"
@@ -14,79 +13,41 @@ var (
 	ErrElicitationNotSupported = errors.New("client does not support elicitation")
 )
 
-// GetSamplingCapability returns the client's sampling capability if available
+// GetSamplingCapability returns the client's sampling capability, or nil if the client didn't
+// declare one. Per the spec, declaring the capability object means sampling is supported;
+// its optional "tools" member means tool-enabled sampling is supported.
 func (d *DefaultHandler) GetSamplingCapability() *schema.SamplingCapability {
 	if d.ClientInitialize == nil || d.ClientInitialize.Capabilities.Sampling == nil {
 		return nil
 	}
 
-	// Parse the map into a strongly-typed capability
-	cap := &schema.SamplingCapability{}
-	if enabled, ok := d.ClientInitialize.Capabilities.Sampling["enabled"].(bool); ok {
-		cap.Enabled = enabled
+	return &schema.SamplingCapability{
+		Enabled:       true,
+		SupportsTools: d.ClientInitialize.Capabilities.Sampling.Tools != nil,
 	}
-	if supportsTools, ok := d.ClientInitialize.Capabilities.Sampling["supportsTools"].(bool); ok {
-		cap.SupportsTools = supportsTools
-	}
-
-	return cap
 }
 
-// GetElicitationCapability returns the client's elicitation capability if available
+// GetElicitationCapability returns the client's elicitation capability, or nil if the client
+// didn't declare one. Per the spec, declaring the capability object means elicitation is
+// supported; its optional "form" and "url" members name the supported modes, and an empty
+// object means form mode only (for compatibility with clients predating modes).
 func (d *DefaultHandler) GetElicitationCapability() *schema.ElicitationCapability {
-	if d.ClientInitialize == nil {
-		d.Logger.Debug(context.Background(), "GetElicitationCapability: ClientInitialize is nil")
+	if d.ClientInitialize == nil || d.ClientInitialize.Capabilities.Elicitation == nil {
 		return nil
 	}
 
-	if d.ClientInitialize.Capabilities.Elicitation == nil {
-		d.Logger.Debug(context.Background(), "GetElicitationCapability: Elicitation map is nil")
-		return nil
+	elicitation := d.ClientInitialize.Capabilities.Elicitation
+	capability := &schema.ElicitationCapability{Enabled: true}
+
+	if elicitation.Form != nil || elicitation.Url == nil {
+		capability.SupportedModes = append(capability.SupportedModes, "form")
 	}
 
-	d.Logger.Debug(context.Background(), map[string]interface{}{
-		"message": "GetElicitationCapability: parsing capabilities",
-		"raw_map": d.ClientInitialize.Capabilities.Elicitation,
-	})
-
-	// Parse the map into a strongly-typed capability
-	cap := &schema.ElicitationCapability{}
-	if enabled, ok := d.ClientInitialize.Capabilities.Elicitation["enabled"].(bool); ok {
-		cap.Enabled = enabled
-		d.Logger.Debug(context.Background(), map[string]interface{}{
-			"message": "GetElicitationCapability: found enabled field",
-			"value":   enabled,
-		})
-	} else {
-		d.Logger.Debug(context.Background(), map[string]interface{}{
-			"message":     "GetElicitationCapability: enabled field not found or wrong type",
-			"enabled_raw": d.ClientInitialize.Capabilities.Elicitation["enabled"],
-		})
+	if elicitation.Url != nil {
+		capability.SupportedModes = append(capability.SupportedModes, "url")
 	}
 
-	if modes, ok := d.ClientInitialize.Capabilities.Elicitation["supportedModes"].([]interface{}); ok {
-		for _, mode := range modes {
-			if modeStr, ok := mode.(string); ok {
-				cap.SupportedModes = append(cap.SupportedModes, modeStr)
-			}
-		}
-		d.Logger.Debug(context.Background(), map[string]interface{}{
-			"message": "GetElicitationCapability: found supportedModes",
-			"modes":   cap.SupportedModes,
-		})
-	} else {
-		d.Logger.Debug(context.Background(), map[string]interface{}{
-			"message":            "GetElicitationCapability: supportedModes not found or wrong type",
-			"supportedModes_raw": d.ClientInitialize.Capabilities.Elicitation["supportedModes"],
-		})
-	}
-
-	d.Logger.Debug(context.Background(), map[string]interface{}{
-		"message": "GetElicitationCapability: returning capability",
-		"enabled": cap.Enabled,
-		"modes":   cap.SupportedModes,
-	})
-	return cap
+	return capability
 }
 
 // CanSample checks if the client supports sampling
