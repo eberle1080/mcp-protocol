@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/eberle1080/jsonrpc v0.0.0-20260923232424-f2e7106581ea
-	github.com/go-viper/mapstructure/v2 v2.2.1
+	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/stretchr/testify v1.11.1
 	github.com/viant/x v0.5.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
