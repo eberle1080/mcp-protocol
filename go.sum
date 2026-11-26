@@ -26,8 +26,12 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/viant/afs v1.30.0 h1:dbgVVSCPwGHUgpgkWJ5gdjKBqssT7OV7Z2M81CjwZEY=
 github.com/viant/afs v1.30.0/go.mod h1:rScbFd9LJPGTM8HOI8Kjwee0AZ+MZMupAvFpPg+Qdj4=
-github.com/viant/x v0.6.0 h1:hVtC0owFwyz82SxxoXkH5exJ2hlc/+C4ppytmxr/wWo=
-github.com/viant/x v0.6.0/go.mod h1:Ud4v5LGA8uA0EfmuO4H0t0YgAq2FNLnh3ydQUjBdaLI=
+github.com/viant/parsly v0.3.3 h1:7ytgfLOG4Ils+wviGacWxRD0gAUvVEH/iGsSE+UI8YM=
+github.com/viant/parsly v0.3.3/go.mod h1:85fneXJbErKMGhSQto3A5ElTQCwl3t74U9cSV0waBHw=
+github.com/viant/tagly v0.4.2-0.20261114220424-b7354b0404e2 h1:ya5A9AeSr3GW8zAnGJZANgeq3qkthsBlCtuT1VZz6FY=
+github.com/viant/tagly v0.4.2-0.20261114220424-b7354b0404e2/go.mod h1:PauQQkHmAvL5lFGr4gIgi+PE0aUPggBIBYN34sX2Oes=
+github.com/viant/x v0.6.1-0.20261106041415-0487ec66884b h1:0JPaEl3YxP6IvqX6dJGd+o0jYJlJE/ldW+WaevMkmZc=
+github.com/viant/x v0.6.1-0.20261106041415-0487ec66884b/go.mod h1:Ud4v5LGA8uA0EfmuO4H0t0YgAq2FNLnh3ydQUjBdaLI=
 github.com/viant/xreflect v0.7.3 h1:Oi2ZzSYWvs3lFBNMHEwHm6pu+3sQRlklzllycZyOGHk=
 github.com/viant/xreflect v0.7.3/go.mod h1:BwI+lqFjhKv2Vn4E0Jt6nvbwcFOWrM6H+sOMOX3JiU4=
 github.com/viant/xunsafe v0.10.3 h1:Fi4N+b5PH7e2iwT1UquAe7wUlTn4Fnb2kBnFLBixX+M=

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 
 	"github.com/eberle1080/jsonrpc"
 	"github.com/eberle1080/mcp-protocol/schema"
@@ -76,6 +77,7 @@ func (d *Registry) ListRegisteredResources() []schema.Resource {
 	for _, resource := range authoritative {
 		list = append(list, resource)
 	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Uri < list[j].Uri })
 	return list
 }
 
@@ -86,6 +88,7 @@ func (d *Registry) ListRegisteredResourceTemplates() []schema.ResourceTemplate {
 		list = append(list, entry.Metadata)
 		return true
 	})
+	sort.Slice(list, func(i, j int) bool { return list[i].UriTemplate < list[j].UriTemplate })
 	return list
 }
 

@@ -4931,6 +4931,8 @@ type RequestMetaObject struct {
 	// opaque token that will be attached to any subsequent notifications. The
 	// receiver is not obligated to provide these notifications.
 	ProgressToken *ProgressToken `json:"progressToken,omitempty" yaml:"progressToken,omitempty" mapstructure:"progressToken,omitempty"`
+
+	AdditionalProperties interface{} `json:"-" yaml:"-" mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -4954,6 +4956,16 @@ func (j *RequestMetaObject) UnmarshalJSON(value []byte) error {
 	type Plain RequestMetaObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := range st.NumField() {
+		key := strings.Split(st.Field(i).Tag.Get("json"), ",")[0]
+		if key != "" && key != "-" {
+			delete(raw, key)
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
 	}
 	*j = RequestMetaObject(plain)
@@ -5443,6 +5455,8 @@ type Result struct {
 // Extends {@link MetaObject} with additional result-specific fields. All key
 // naming rules from `MetaObject` apply.
 type ResultMetaObject struct {
+	// AdditionalProperties preserves application and protocol extension metadata.
+	AdditionalProperties interface{} `json:"-" yaml:",inline" mapstructure:",remain"`
 	// Identifies the server software producing the response. Servers SHOULD
 	// include this field on every response unless specifically configured not
 	// to do so.
@@ -5988,7 +6002,7 @@ type ToolInputSchema struct {
 	// Type corresponds to the JSON schema field "type".
 	Type string `json:"type" yaml:"type" mapstructure:"type"`
 
-	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" yaml:"-" mapstructure:",remain"`
 }
 
 // ToolInputSchemaProperties preserves the root package's pre-July API while
@@ -5998,7 +6012,7 @@ type ToolInputSchemaProperties map[string]map[string]interface{}
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ToolInputSchema) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
+	if err := unmarshalToolSchemaJSON(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["type"]; raw != nil && !ok {
@@ -6006,7 +6020,7 @@ func (j *ToolInputSchema) UnmarshalJSON(value []byte) error {
 	}
 	type Plain ToolInputSchema
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := unmarshalToolSchemaJSON(value, &plain); err != nil {
 		return err
 	}
 	st := reflect.TypeOf(Plain{})
@@ -6014,6 +6028,9 @@ func (j *ToolInputSchema) UnmarshalJSON(value []byte) error {
 		delete(raw, st.Field(i).Name)
 		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
 	}
+	// JSON Schema additionalProperties is vocabulary, not this Go catchall field.
+	// Clear the value assigned by encoding/json before decoding the remaining map.
+	plain.AdditionalProperties = nil
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
 	}
@@ -6043,7 +6060,7 @@ type ToolOutputSchema struct {
 	// API. July output schemas may omit it.
 	Type string `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type,omitempty"`
 
-	AdditionalProperties interface{} `json:"-" mapstructure:",remain"`
+	AdditionalProperties interface{} `json:"-" yaml:"-" mapstructure:",remain"`
 }
 
 // Definition for a tool the client can call.

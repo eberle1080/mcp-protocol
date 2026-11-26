@@ -28,14 +28,39 @@ func containsAll(slice []string, want ...string) bool {
 	return true
 }
 
+func TestToolSchemasLoadFieldConstraints(t *testing.T) {
+	type input struct {
+		Values []string `json:"values" minItems:"1" maxItems:"50"`
+		Code   string   `json:"code" mcp:"name=codeLabel" maxLength:"64"`
+		Hidden string   `json:"hidden" mcp:"-" maxLength:"invalid"`
+	}
+	var request ToolInputSchema
+	if err := request.Load(input{}); err != nil {
+		t.Fatal(err)
+	}
+	var response ToolOutputSchema
+	if err := response.Load(input{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, properties := range []ToolInputSchemaProperties{request.Properties, response.Properties} {
+		values, code := prop(properties, "values"), prop(properties, "codeLabel")
+		if values["minItems"] != 1 || values["maxItems"] != 50 || code["maxLength"] != 64 {
+			t.Fatalf("field constraints missing: %v", properties)
+		}
+		if prop(properties, "hidden") != nil || prop(properties, "code") != nil {
+			t.Fatalf("MCP field selection changed: %v", properties)
+		}
+	}
+}
+
 // Test: anonymous embedded struct is flattened, requireds propagate when non-pointer.
 func TestStructToProperties_EmbeddedAnonymous(t *testing.T) {
 	type A struct {
-		X string `json:"x"`
+		X string `json:"x" required:"true"`
 	}
 	type B struct {
 		A     // anonymous embed
-		Y int `json:"y"`
+		Y int `json:"y" required:"true"`
 	}
 
 	props, req := StructToProperties(reflect.TypeOf(B{}))
@@ -51,11 +76,11 @@ func TestStructToProperties_EmbeddedAnonymous(t *testing.T) {
 // Test: tagged inline embedding flattens fields.
 func TestStructToProperties_EmbeddedInlineTag(t *testing.T) {
 	type A struct {
-		X string `json:"x"`
+		X string `json:"x" required:"true"`
 	}
 	type B struct {
 		A `json:",inline"`
-		Z string `json:"z"`
+		Z string `json:"z" required:"true"`
 	}
 
 	props, req := StructToProperties(reflect.TypeOf(B{}))
@@ -71,11 +96,11 @@ func TestStructToProperties_EmbeddedInlineTag(t *testing.T) {
 // Test: pointer embedded struct flattens but does not propagate required.
 func TestStructToProperties_EmbeddedPointerOptional(t *testing.T) {
 	type A struct {
-		X string `json:"x"`
+		X string `json:"x" required:"true"`
 	}
 	type B struct {
 		*A        // pointer embed
-		Z  string `json:"z"`
+		Z  string `json:"z" required:"true"`
 	}
 	props, req := StructToProperties(reflect.TypeOf(B{}))
 	if prop(props, "x") == nil || prop(props, "z") == nil {
@@ -169,8 +194,8 @@ func TestStructToProperties_RequiredLogic(t *testing.T) {
 	if prop(props, "a") == nil || prop(props, "b") == nil {
 		t.Fatalf("missing properties a or b")
 	}
-	// a and d should be required; c and e should not; b is pointer+omitempty so not required
-	wantReq := []string{"a", "d"}
+	// Only explicitly required d is required; all other fields are optional.
+	wantReq := []string{"d"}
 	if !containsAll(req, wantReq...) || containsAll(req, "b", "c", "e") {
 		t.Fatalf("unexpected required set: %v", req)
 	}
@@ -246,11 +271,11 @@ func TestBuildJSONSchema_NullablePointers(t *testing.T) {
 // Test: inline merge does not overwrite existing parent properties with same key.
 func TestStructToProperties_InlineNoOverwrite(t *testing.T) {
 	type A struct {
-		X string `json:"x"`
+		X string `json:"x" required:"true"`
 	}
 	type B struct {
 		A     // anonymous embed provides x
-		X int `json:"x"` // parent also defines x
+		X int `json:"x" required:"true"` // parent also defines x
 	}
 	props, _ := StructToProperties(reflect.TypeOf(B{}))
 	x := prop(props, "x")
