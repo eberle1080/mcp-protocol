@@ -44,7 +44,7 @@ func (d *DefaultHandler) populateCapabilities(capabilities *schema.ServerCapabil
 	if d.ServerCapabilities != nil {
 		*capabilities = *d.ServerCapabilities
 	}
-	if d.ToolRegistry.Size() > 0 {
+	if d.ToolRegistry.Size() > 0 && capabilities.Tools == nil {
 		capabilities.Tools = &schema.ServerCapabilitiesTools{ListChanged: listChangedOrDefault(d.ToolsListChanged)}
 	}
 	if d.ResourceRegistry.Size() > 0 || d.ResourceTemplateRegistry.Size() > 0 {
@@ -83,7 +83,9 @@ func (d *DefaultHandler) ListResources(ctx context.Context, request *jsonrpc.Typ
 	// Return list of registered resources
 	resources := d.ListRegisteredResources()
 	return &schema.ListResourcesResult{
-		Resources: resources,
+		ResultType: schema.ResultTypeComplete,
+		CacheScope: schema.ListResourcesResultCacheScopePrivate,
+		Resources:  resources,
 	}, nil
 }
 
@@ -92,6 +94,8 @@ func (d *DefaultHandler) ListResourceTemplates(ctx context.Context, request *jso
 	// Return list of registered resource templates
 	templates := d.ListRegisteredResourceTemplates()
 	return &schema.ListResourceTemplatesResult{
+		ResultType:        schema.ResultTypeComplete,
+		CacheScope:        schema.ListResourceTemplatesResultCacheScopePrivate,
 		ResourceTemplates: templates,
 	}, nil
 }
@@ -105,7 +109,7 @@ func (d *DefaultHandler) ReadResource(ctx context.Context, jRequest *jsonrpc.Typ
 	}
 	handler, ok := d.getResourceHandler(request.Params.Uri)
 	if !ok {
-		return nil, jsonrpc.NewMethodNotFound(fmt.Sprintf("resource %v not found", request.Params.Uri), nil)
+		return nil, jsonrpc.NewInvalidParamsError(fmt.Sprintf("resource %v not found", request.Params.Uri), nil)
 	}
 	return handler(ctx, request)
 }
@@ -128,7 +132,10 @@ func (d *DefaultHandler) Unsubscribe(ctx context.Context, jRequest *jsonrpc.Type
 // ListTools returns method-not-found by default.
 func (d *DefaultHandler) ListTools(ctx context.Context, jRequest *jsonrpc.TypedRequest[*schema.ListToolsRequest]) (*schema.ListToolsResult, *jsonrpc.Error) {
 	// Return the list of registered tools
-	tools := d.ListRegisteredTools()
+	tools, err := d.ListToolsFor(ctx)
+	if err != nil {
+		return nil, jsonrpc.NewError(jsonrpc.InternalError, err.Error(), nil)
+	}
 	protocolVersion := jRequest.Request.Params.Meta.IoModelcontextprotocolProtocolVersion
 	if protocolVersion == "" && d.ClientInitialize != nil {
 		protocolVersion = d.ClientInitialize.ProtocolVersion

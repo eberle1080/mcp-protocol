@@ -3,18 +3,20 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/viant/tagly/choice"
 	"reflect"
-	"regexp"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/eberle1080/mcp-protocol/schema/fieldname"
+	"github.com/eberle1080/mcp-protocol/schema/internal/fieldconstraints"
 )
 
-// visitedTypes tracks types currently being processed to detect cyclic definitions.
-var (
-	visitedMu    sync.Mutex
-	visitedTypes map[reflect.Type]bool
-)
+// Each compilation owns its recursion state. Another caller processing the same
+// type is not a cycle in this caller's schema.
+type schemaTraversal struct {
+	visited map[reflect.Type]bool
+}
 
 // buildJSONSchema constructs a JSON-schema fragment that represents the supplied Go reflect.Type.
 // The `inSlice` flag is an internal recursion marker: it is true when the type
@@ -23,35 +25,18 @@ var (
 // types) should be kept or suppressed.
 // It detects and breaks cycles in types, returning an empty object schema on recursion.
 func buildJSONSchema(t reflect.Type, inSlice bool, opts ...StructToPropertiesOption) map[string]interface{} {
+	return (&schemaTraversal{visited: make(map[reflect.Type]bool)}).build(t, inSlice, opts...)
+}
+
+func (v *schemaTraversal) build(t reflect.Type, inSlice bool, opts ...StructToPropertiesOption) map[string]interface{} {
+	opts = customBoundaryOptions(t, opts)
 	schema := make(map[string]interface{})
 
-	// initialize cycle-detection state on outermost call
-	visitedMu.Lock()
-	first := visitedTypes == nil
-	if first {
-		visitedTypes = make(map[reflect.Type]bool)
-	}
-	// detect cyclic types: if this type is already being processed, break the cycle
-	if visitedTypes[t] {
-		visitedMu.Unlock()
-		if first {
-			visitedMu.Lock()
-			visitedTypes = nil
-			visitedMu.Unlock()
-		}
+	if v.visited[t] {
 		return map[string]interface{}{"type": "object"}
 	}
-	visitedTypes[t] = true
-	visitedMu.Unlock()
-
-	defer func() {
-		visitedMu.Lock()
-		delete(visitedTypes, t)
-		if first {
-			visitedTypes = nil
-		}
-		visitedMu.Unlock()
-	}()
+	v.visited[t] = true
+	defer delete(v.visited, t)
 
 	// Special handling for time.Time: treat as ISO 8601 string.
 	if t == reflect.TypeOf(time.Time{}) {
@@ -63,7 +48,7 @@ func buildJSONSchema(t reflect.Type, inSlice bool, opts ...StructToPropertiesOpt
 	// Handle pointer types.
 	if t.Kind() == reflect.Ptr {
 		// Unwrap pointer.
-		schema = buildJSONSchema(t.Elem(), inSlice, opts...)
+		schema = v.build(t.Elem(), inSlice, opts...)
 		// Mark as nullable unless we are processing a slice element.
 		if !inSlice {
 			schema["nullable"] = true
@@ -87,19 +72,19 @@ func buildJSONSchema(t reflect.Type, inSlice bool, opts ...StructToPropertiesOpt
 	case reflect.Slice, reflect.Array:
 		schema["type"] = "array"
 		// When processing slice items, set inSlice = true.
-		schema["items"] = buildJSONSchema(t.Elem(), true, opts...)
+		schema["items"] = v.build(t.Elem(), true, opts...)
 	case reflect.Map:
 		schema["type"] = "object"
 		// Open-ended objects when the map value is interface{}.
 		if t.Elem().Kind() == reflect.Interface {
 			schema["additionalProperties"] = true
 		} else {
-			schema["additionalProperties"] = buildJSONSchema(t.Elem(), false, opts...)
+			schema["additionalProperties"] = v.build(t.Elem(), false, opts...)
 		}
 	case reflect.Struct:
 		// For structs, recursively convert their fields.
 		schema["type"] = "object"
-		properties, required := StructToProperties(t, opts...)
+		properties, required := v.properties(t, opts...)
 		schema["properties"] = properties
 		if len(required) > 0 {
 			schema["required"] = required
@@ -126,6 +111,7 @@ func typeSchema(t reflect.Type, opts ...StructToPropertiesOption) map[string]int
 type StructToPropertiesOption func(*structToPropertiesOptions)
 
 type structToPropertiesOptions struct {
+	skipMCPNames    bool
 	SkipFieldHook   func(field reflect.StructField) bool
 	IsRequiredHook  func(field reflect.StructField) bool
 	FormatHook      func(field reflect.StructField) string
@@ -178,6 +164,11 @@ func WithNullableHook(hook func(field reflect.StructField) *bool) StructToProper
 // affecting their JSON encoding behavior.
 // It accepts optional StructToPropertiesOption to customize behavior (e.g., skipping fields, required logic, format overrides).
 func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolInputSchemaProperties, []string) {
+	return (&schemaTraversal{visited: make(map[reflect.Type]bool)}).properties(t, opts...)
+}
+
+func (v *schemaTraversal) properties(t reflect.Type, opts ...StructToPropertiesOption) (ToolInputSchemaProperties, []string) {
+	opts = customBoundaryOptions(t, opts)
 	var opt structToPropertiesOptions
 	for _, o := range opts {
 		o(&opt)
@@ -185,6 +176,15 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 
 	properties := make(ToolInputSchemaProperties)
 	var required []string
+	requiredNames := make(map[string]bool)
+	addRequired := func(names ...string) {
+		for _, name := range names {
+			if !requiredNames[name] {
+				requiredNames[name] = true
+				required = append(required, name)
+			}
+		}
+	}
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -242,7 +242,7 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 			}
 			// Only inline struct types.
 			if embeddedType.Kind() == reflect.Struct {
-				childProps, childReq := StructToProperties(embeddedType, opts...)
+				childProps, childReq := v.properties(embeddedType, opts...)
 				// Merge child properties into parent, without overwriting existing keys.
 				for k, v := range childProps {
 					if _, exists := properties[k]; !exists {
@@ -251,10 +251,8 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 				}
 				// Propagate requireds only if this embedded field itself is required
 				// (i.e., not a pointer, not omitempty, and not explicitly optional).
-				tag := string(field.Tag)
-				isOptional := strings.Contains(tag, "required=false") || strings.Contains(tag, "optional")
-				if !isPtr && !omitempty && !isOptional {
-					required = append(required, childReq...)
+				if !isPtr && !omitempty && !fieldname.OptionalOwner(field) {
+					addRequired(childReq...)
 				}
 				// Done handling this field.
 				continue
@@ -262,7 +260,7 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 		}
 
 		// Generate the field's JSON schema.
-		fieldSchema := typeSchema(field.Type, opts...)
+		fieldSchema := v.build(field.Type, false, opts...)
 		// Determine format via hook or tag.
 		var fmtVal string
 		if opt.FormatHook != nil {
@@ -286,14 +284,47 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 			fieldSchema["example"] = example
 		}
 
-		if choice := field.Tag.Get("choice"); choice != "" {
-			re := regexp.MustCompile(`choice:"([^"]+)"`)
-			matches := re.FindAllStringSubmatch(string(field.Tag), -1)
-			var choices []string
-			for _, match := range matches {
-				choices = append(choices, match[1])
+		enumeration, enumErr := choice.ParseEnum(field.Tag, field.Type)
+		if enumErr != nil {
+			fieldSchema["not"] = map[string]any{}
+		}
+		if enumeration != nil && enumeration.CollectionItems() != nil {
+			items, ok := fieldSchema["items"].(map[string]interface{})
+			if !ok {
+				fieldSchema["not"] = map[string]any{}
+			} else {
+				if element := enumeration.CollectionElement(); element != nil {
+					fieldSchema["items"] = map[string]any{"type": element.WireType(true), "enum": element.WireValues(true)}
+				} else {
+					items["enum"] = enumeration.CollectionItems().WireValues()
+				}
 			}
-			fieldSchema["enum"] = choices
+		} else if enumeration != nil {
+			fieldSchema["type"] = enumeration.WireType(true)
+			delete(fieldSchema, "format")
+			values := enumeration.WireValues(true)
+			if field.Type.Kind() == reflect.Pointer {
+				fieldSchema["type"] = []string{enumeration.WireType(true), "null"}
+				values = append(values, nil)
+			}
+			fieldSchema["enum"] = values
+		}
+		constraint, choiceErr := choice.Parse(field.Tag, field.Type)
+		if choiceErr != nil {
+			// This legacy API has no error return. Fail closed on invalid metadata.
+			fieldSchema["not"] = map[string]interface{}{}
+		} else if constraint != nil && enumeration == nil {
+			if field.Type.Kind() == reflect.Pointer {
+				fieldSchema["enum"] = append(constraint.WireValues(), nil)
+			} else if constraint.Type.Kind() == reflect.String {
+				values := make([]string, len(constraint.Values))
+				for i, v := range constraint.Values {
+					values[i] = reflect.ValueOf(v).String()
+				}
+				fieldSchema["enum"] = values
+			} else {
+				fieldSchema["enum"] = constraint.WireValues()
+			}
 		}
 
 		// Handle default values for primitive types via `default:"..."` tag.
@@ -323,21 +354,21 @@ func StructToProperties(t reflect.Type, opts ...StructToPropertiesOption) (ToolI
 				}
 			}
 		}
+		if err := fieldconstraints.Apply(fieldSchema, field.Tag); err != nil {
+			// This legacy API reports invalid field metadata as an unsatisfiable schema.
+			fieldSchema["not"] = map[string]any{}
+		}
 		// Set the property in overall schema.
 		properties[fieldName] = fieldSchema
-		tag := string(field.Tag)
-		isOptional := strings.Contains(tag, "required=false") || strings.Contains(tag, "optional")
-		if isOptional {
-			continue
-		}
-		isRequiredValue, isRequired := field.Tag.Lookup("required")
-		isRequired = isRequiredValue == "true" || (isRequiredValue == "" && isRequired)
-		if (field.Type.Kind() != reflect.Ptr && !omitempty) || isRequired {
-			required = append(required, fieldName)
+		if fieldname.Required(field) {
+			addRequired(fieldName)
 		}
 	}
 
-	return properties, required
+	if opt.skipMCPNames {
+		return properties, required
+	}
+	return applyLegacyFieldNames(t, properties, required)
 }
 
 func parseFieldExample(field reflect.StructField) (interface{}, bool) {
@@ -360,6 +391,9 @@ func (s *ToolInputSchema) Load(v any, options ...StructToPropertiesOption) error
 	if t.Kind() != reflect.Struct {
 		return fmt.Errorf("expected a struct type, got %s", t.Kind())
 	}
+	if err := validateLegacyFieldNames(t, options...); err != nil {
+		return err
+	}
 	properties, required := StructToProperties(t, options...)
 	s.Properties = properties
 	s.Required = required
@@ -374,6 +408,9 @@ func (s *ToolOutputSchema) Load(v any, options ...StructToPropertiesOption) erro
 	}
 	if t.Kind() != reflect.Struct {
 		return fmt.Errorf("expected a struct type, got %s", t.Kind())
+	}
+	if err := validateLegacyFieldNames(t, options...); err != nil {
+		return err
 	}
 	properties, required := StructToProperties(t, options...)
 	s.Properties = properties

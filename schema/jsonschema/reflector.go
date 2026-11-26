@@ -7,6 +7,10 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"github.com/eberle1080/mcp-protocol/schema/fieldname"
+	"github.com/eberle1080/mcp-protocol/schema/internal/fieldconstraints"
+	"github.com/viant/tagly/choice"
+	"github.com/viant/tagly/format"
 	xshape "github.com/viant/x/shape"
 	"reflect"
 	"strings"
@@ -16,22 +20,63 @@ import (
 // Reflector uses X's encoding/json field projection; annotations cannot change
 // selection, Go identity, JSON names, or source types.
 type Reflector struct {
-	Annotate func(string, reflect.StructField) (string, any)
+	// InputAliases opts into native Tagly decoder aliases. Ordinary encoding/json
+	// consumers leave this false. Output schemas always retain canonical names.
+	InputAliases bool
+	// RequireField adds owner-supplied requiredness before input alias projection.
+	// Nil retains authored tags only. Hidden fields are never passed to it.
+	RequireField func(path string, field reflect.StructField) bool
+	// Output selects enumStyle for response schemas; inputs use enumAccept.
+	Output bool
+	// FallbackName shares an owner-supplied naming policy with argument binding.
+	// Explicit MCP names remain authoritative.
+	FallbackName func(reflect.StructField, string) string
+
+	// WireTypes declares owner-authored canonical wire representations for custom
+	// JSON types. It never infers a contract or invokes custom marshal methods.
+	WireTypes map[reflect.Type]reflect.Type
+
+	// ExcludeInternal removes internal-tagged JSON winners from public input schemas.
+	// The zero value retains ordinary encoding/json schema semantics.
+	ExcludeInternal bool
+	// ExcludeField applies owner-defined visibility to canonical JSON winners
+	// and their embedding owners before compiling child schemas or annotations.
+	// Nil preserves ordinary JSON field visibility.
+	ExcludeField func(reflect.StructField) bool
+	Annotate     func(string, reflect.StructField) (string, any)
 }
 type Request struct {
-	Type     reflect.Type
-	Path     string
-	Property string
+	// Field optionally retains the selected member annotations for flattened inputs.
+	Field          *xshape.JSONField
+	Representation *xshape.Representation
+	Type           reflect.Type
+	Path           string
+	Property       string
 }
 
 func (r Reflector) Compile(request Request) (map[string]any, error) {
+	if err := validateWireTypes(r.WireTypes); err != nil {
+		return nil, err
+	}
 	prefix := "#/$defs/"
 	if request.Property != "" {
 		prefix = "#/properties/" + strings.ReplaceAll(strings.ReplaceAll(request.Property, "~", "~0"), "/", "~1") + "/$defs/"
 	}
-	compiler := reflectionCompiler{reflector: r, prefix: prefix, active: map[reflect.Type]string{}, objects: map[string]map[string]any{}, referenced: map[string]bool{}}
-	result, err := compiler.value(request.Type, request.Path)
+	compiler := reflectionCompiler{reflector: r, prefix: prefix, active: map[reflect.Type]string{}, objects: map[string]map[string]any{}, referenced: map[string]bool{}, inputPlans: map[string]*format.InputScopePlan{}}
+	var result map[string]any
+	var err error
+	if request.Field != nil {
+		if request.Field.Field.ReflectedType != request.Type {
+			return nil, fmt.Errorf("selected schema field type does not match request")
+		}
+		result, err = compiler.field(*request.Field, request.Path, request.Representation)
+	} else {
+		result, err = compiler.value(request.Type, request.Path, false, request.Representation)
+	}
 	if err != nil {
+		return nil, err
+	}
+	if err := format.ValidateInputScopePlan(compiler.inputRoot); err != nil {
 		return nil, err
 	}
 	if len(compiler.referenced) > 0 {
@@ -50,21 +95,45 @@ func (r Reflector) Compile(request Request) (map[string]any, error) {
 }
 
 type reflectionCompiler struct {
-	reflector  Reflector
-	prefix     string
-	active     map[reflect.Type]string
-	objects    map[string]map[string]any
-	referenced map[string]bool
+	inputRoot, inputCurrent *format.InputScopePlan
+	inputPlans              map[string]*format.InputScopePlan
+	reflector               Reflector
+	prefix                  string
+	active                  map[reflect.Type]string
+	objects                 map[string]map[string]any
+	referenced              map[string]bool
 }
 
-func (c *reflectionCompiler) value(t reflect.Type, path string) (map[string]any, error) {
+func (c *reflectionCompiler) value(t reflect.Type, path string, inSlice bool, representations ...*xshape.Representation) (map[string]any, error) {
+	var metadata *xshape.Representation
+	if len(representations) > 0 {
+		metadata = representations[0]
+	}
+	if metadata != nil && !metadata.Changed() {
+		metadata = nil
+	}
+	for metadata != nil && metadata.Original() != t && metadata.Original().Kind() == reflect.Pointer {
+		metadata = metadata.Elem()
+	}
+	if metadata != nil && metadata.Original() != t {
+		return nil, fmt.Errorf("schema representation type mismatch")
+	}
+	var child *xshape.Representation
+	if metadata != nil {
+		child = metadata.Elem()
+	}
+	visibility := c.reflector.nameVisibility()
+	visibility.Representation = metadata
 	if t == nil {
 		return nil, fmt.Errorf("JSON schema requires source type")
 	}
 	if t.Kind() == reflect.Pointer {
-		item, err := c.value(t.Elem(), path)
+		item, err := c.value(t.Elem(), path, inSlice, child)
 		if err != nil {
 			return nil, err
+		}
+		if inSlice {
+			return item, nil
 		}
 		if kind, ok := item["type"].(string); ok {
 			copy := map[string]any{}
@@ -76,6 +145,25 @@ func (c *reflectionCompiler) value(t reflect.Type, path string) (map[string]any,
 		}
 		return map[string]any{"anyOf": []any{item, map[string]any{"type": "null"}}}, nil
 	}
+	if wire := c.reflector.WireTypes[t]; wire != nil {
+		return c.value(wire, path, inSlice)
+	}
+	if fieldname.CustomJSON(t) && c.reflector.FallbackName != nil {
+		// Custom JSON owners keep their existing wire spelling and decoder.
+		scoped := *c
+		scoped.reflector.FallbackName = nil
+		return scoped.value(t, path, inSlice, metadata)
+	}
+	if fieldname.CustomJSON(t) {
+		yes, err := fieldname.HasNames(t, c.reflector.nameVisibility())
+		if err != nil {
+			return nil, err
+		}
+		if yes {
+			return nil, fmt.Errorf("MCP names on custom JSON type %s require decoding authority", t)
+		}
+	}
+
 	if t == reflect.TypeFor[time.Time]() {
 		return map[string]any{"type": "string", "format": "date-time"}, nil
 	}
@@ -83,15 +171,15 @@ func (c *reflectionCompiler) value(t reflect.Type, path string) (map[string]any,
 		// RawMessage represents any JSON value, regardless of its underlying slice type.
 		return map[string]any{}, nil
 	}
-	pointer := reflect.PointerTo(t)
-	if t.Implements(reflect.TypeFor[json.Marshaler]()) || pointer.Implements(reflect.TypeFor[json.Marshaler]()) ||
-		pointer.Implements(reflect.TypeFor[json.Unmarshaler]()) || t.Implements(reflect.TypeFor[encoding.TextMarshaler]()) ||
-		pointer.Implements(reflect.TypeFor[encoding.TextMarshaler]()) || pointer.Implements(reflect.TypeFor[encoding.TextUnmarshaler]()) {
-		return nil, fmt.Errorf("custom JSON source %s requires authored wire authority", t)
-	}
+	// Match legacy discovery when no explicit wire mapping is supplied. Custom
+	// methods do not replace the reflected schema and are never called here.
 	switch t.Kind() {
 	case reflect.Struct:
+
 		if id := c.active[t]; id != "" {
+			if c.inputCurrent != nil {
+				c.inputCurrent.Children = append(c.inputCurrent.Children, c.inputPlans[id])
+			}
 			c.referenced[id] = true
 			return map[string]any{"$ref": c.prefix + id}, nil
 		}
@@ -99,57 +187,119 @@ func (c *reflectionCompiler) value(t reflect.Type, path string) (map[string]any,
 		if err != nil {
 			return nil, err
 		}
-		id := fmt.Sprintf("T_%x", sha256.Sum256([]byte(t.PkgPath()+":"+expression+":"+path)))
+		metadataKey := ""
+		if metadata != nil {
+			metadataKey = metadata.Signature()
+		}
+		id := fmt.Sprintf("T_%x", sha256.Sum256([]byte(t.PkgPath()+":"+expression+":"+path+metadataKey)))
+		if c.reflector.InputAliases && !c.reflector.Output {
+			node := &format.InputScopePlan{Scope: format.InputScope{}}
+			c.inputPlans[id] = node
+			if c.inputRoot == nil {
+				c.inputRoot = node
+			}
+			previous := c.inputCurrent
+			if previous != nil {
+				previous.Children = append(previous.Children, node)
+			}
+			c.inputCurrent = node
+			defer func() { c.inputCurrent = previous }()
+		}
 		c.active[t] = id
 		defer delete(c.active, t)
 		properties := map[string]any{}
 		result := map[string]any{"type": "object", "properties": properties}
 		c.objects[id] = result
-		fields, err := xshape.Linked(t).JSONFields()
+		var fields []xshape.JSONField
+		if metadata != nil {
+			fields, err = metadata.JSONFields()
+		} else {
+			fields, err = xshape.Linked(t).JSONFields()
+		}
 		if err != nil {
 			return nil, err
 		}
+		// Discovery and input normalization share the same final-name winner
+		// selection, including case-formatted anonymous members.
+		entries, err := fieldname.Fields(t, visibility)
+		if err != nil {
+			return nil, err
+		}
+		names := map[string]fieldname.Name{}
+		for _, entry := range entries {
+			names[entry.JSONName] = entry.Name
+			if c.inputCurrent != nil {
+				c.inputCurrent.Scope[entry.Field.Name] = false
+			}
+		}
+		var required []string
+		var inputNames []format.InputName
+		var inputPolicies []*format.Tag
 		for _, field := range fields {
-			if field.Field.Tag.Get("setMarker") == "true" {
+			name, selected := names[field.Name]
+			if !selected {
 				continue
 			}
 			fieldPath := field.Field.Name
 			if path != "" {
 				fieldPath = path + "." + fieldPath
 			}
-			property, err := c.value(field.Field.ReflectedType, fieldPath)
+			var fieldMetadata *xshape.Representation
+			if metadata != nil {
+				fieldMetadata = metadata.FieldShapeByIndex(field.Field.Index)
+			}
+			property, err := c.field(field, fieldPath, fieldMetadata)
 			if err != nil {
-				return nil, fmt.Errorf("field %s: %w", fieldPath, err)
+				return nil, err
 			}
-			if field.Quoted {
-				property = map[string]any{"type": "string"}
+			properties[name.Public] = property
+			isRequired := requiredField(t, field.Field.Index, field.Field.StructField(), metadata)
+			if c.reflector.RequireField != nil && c.reflector.RequireField(fieldPath, field.Field.StructField()) {
+				isRequired = true
 			}
-			if c.reflector.Annotate != nil {
-				description, example := c.reflector.Annotate(fieldPath, field.Field.StructField())
-				if description != "" {
-					property["description"] = description
+			if c.reflector.InputAliases && !c.reflector.Output {
+				policy, err := format.Parse(field.Field.Tag)
+				if err != nil {
+					return nil, err
 				}
-				if example != nil {
-					property["examples"] = []any{example}
+				guard, err := policy.InputGuard()
+				if err != nil {
+					return nil, err
 				}
+				c.inputCurrent.Guards = append(c.inputCurrent.Guards, guard)
+				inputNames = append(inputNames, format.InputName{Name: name.Public, Aliases: policy.InputNames})
+				inputPolicies = append(inputPolicies, policy)
+				isRequired = projectInputAliases(result, name.Public, property, policy, isRequired)
 			}
-			properties[field.Name] = property
+			if isRequired {
+				required = append(required, name.Public)
+			}
+		}
+		if c.reflector.InputAliases && !c.reflector.Output {
+			if _, err := format.NewInputNameMatcher(inputNames, inputPolicies...); err != nil {
+				return nil, err
+			}
+		}
+		if len(required) > 0 {
+			result["required"] = required
 		}
 		return result, nil
 	case reflect.Slice, reflect.Array:
-		if t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8 {
-			return map[string]any{"type": "string", "contentEncoding": "base64"}, nil
-		}
-		element, err := c.value(t.Elem(), path)
+		element, err := c.value(t.Elem(), path, true, child)
 		if err != nil {
 			return nil, err
 		}
 		return map[string]any{"type": "array", "items": element}, nil
 	case reflect.Map:
-		if t.Key().Kind() != reflect.String {
+		// encoding/json encodes integer keys as decimal object member names.
+		// Preserve legacy discovery for those ordinary serializable maps.
+		switch t.Key().Kind() {
+		case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		default:
 			return nil, fmt.Errorf("map key %s is unsupported", t.Key())
 		}
-		value, err := c.value(t.Elem(), path)
+		value, err := c.value(t.Elem(), path, false, child)
 		if err != nil {
 			return nil, err
 		}
@@ -168,4 +318,178 @@ func (c *reflectionCompiler) value(t reflect.Type, path string) (map[string]any,
 		}
 	}
 	return nil, fmt.Errorf("source type %s is unsupported", t)
+}
+
+func requiredField(owner reflect.Type, index []int, field reflect.StructField, representations ...*xshape.Representation) bool {
+	var metadata *xshape.Representation
+	if len(representations) > 0 {
+		metadata = representations[0]
+	}
+	current := owner
+	for position, item := range index {
+		for current.Kind() == reflect.Pointer {
+			current = current.Elem()
+			if metadata != nil {
+				metadata = metadata.Elem()
+			}
+		}
+		selected := current.Field(item)
+		if metadata != nil {
+			selected = metadata.Field(item)
+			metadata = metadata.FieldShape(item)
+		}
+		if position < len(index)-1 && fieldname.OptionalOwner(selected) {
+			return false
+		}
+		current = selected.Type
+	}
+	return fieldname.Required(field)
+}
+
+// excludedJSONField checks the canonical selected index, including promoted
+// embedding owners. Filtering happens after JSON dominance so a shadowed public
+// field never becomes visible when an internal winner is excluded.
+func (r Reflector) excludedJSONField(owner reflect.Type, index []int) bool {
+	return r.nameVisibility().Excluded(owner, index)
+}
+func (r Reflector) nameVisibility() fieldname.Visibility {
+	return fieldname.Visibility{ExcludeInternal: r.ExcludeInternal, ExcludeField: r.ExcludeField, FallbackName: r.FallbackName}
+}
+
+func validateWireTypes(authority map[reflect.Type]reflect.Type) error {
+	for source, wire := range authority {
+		if source == nil || wire == nil || source.Kind() == reflect.Pointer || wire.Kind() == reflect.Pointer {
+			return fmt.Errorf("wire authority requires non-pointer source and representation types")
+		}
+		seen := map[reflect.Type]bool{}
+		for current := source; current != nil; current = authority[current] {
+			if seen[current] {
+				return fmt.Errorf("cyclic authored wire authority for %s", source)
+			}
+			seen[current] = true
+		}
+		pointer := reflect.PointerTo(source)
+		if !source.Implements(reflect.TypeFor[json.Marshaler]()) && !pointer.Implements(reflect.TypeFor[json.Marshaler]()) && !pointer.Implements(reflect.TypeFor[json.Unmarshaler]()) && !source.Implements(reflect.TypeFor[encoding.TextMarshaler]()) && !pointer.Implements(reflect.TypeFor[encoding.TextMarshaler]()) && !pointer.Implements(reflect.TypeFor[encoding.TextUnmarshaler]()) {
+			return fmt.Errorf("wire authority requires a custom JSON source: %s", source)
+		}
+	}
+	return nil
+}
+
+// field retains the native per-member lowering for both nested and flattened
+// arguments: scalar wire authority, quoted values, choices and annotations.
+func (c *reflectionCompiler) field(field xshape.JSONField, fieldPath string, fieldMetadata *xshape.Representation) (map[string]any, error) {
+	property, declared, err := ScalarWireSchema(field.Field.StructField())
+	if declared && err == nil {
+		base := field.Field.ReflectedType
+		for base.Kind() == reflect.Pointer {
+			base = base.Elem()
+		}
+		if c.reflector.WireTypes[base] != nil {
+			err = fmt.Errorf("conflicting scalar and type wire authorities for %s", fieldPath)
+		}
+	}
+	if !declared {
+		property, err = c.value(field.Field.ReflectedType, fieldPath, false, fieldMetadata)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("field %s: %w", fieldPath, err)
+	}
+	if field.Quoted {
+		property = map[string]any{"type": "string"}
+	}
+	choiceType := field.Field.ReflectedType
+	choiceBase := choiceType
+	for choiceBase.Kind() == reflect.Pointer {
+		choiceBase = choiceBase.Elem()
+	}
+	if wire := c.reflector.WireTypes[choiceBase]; wire != nil {
+		choiceType = wire
+	}
+	enumeration, err := choice.ParseEnum(field.Field.Tag, choiceType)
+	if err != nil {
+		return nil, err
+	}
+	if enumeration != nil && enumeration.CollectionItems() == nil {
+		if field.Quoted || declared {
+			return nil, fmt.Errorf("enumAccept conflicts with explicit scalar wire encoding")
+		}
+		property = enumSchema(enumeration, c.reflector.Output, field.Field.ReflectedType.Kind() == reflect.Pointer)
+	}
+	if enumeration == nil || enumeration.CollectionItems() != nil {
+		collection := enumeration
+		if collection == nil {
+			collection, err = choice.ParseCollectionEnum(field.Field.Tag, choiceType)
+			if err != nil {
+				return nil, fmt.Errorf("field %s collection choices: %w", fieldPath, err)
+			}
+		}
+		var constraint *choice.Constraint
+		if collection != nil {
+			items, ok := property["items"].(map[string]any)
+			if !ok || declared || field.Quoted {
+				return nil, fmt.Errorf("field %s collection choices require an ordinary array schema", fieldPath)
+			}
+			if element := collection.CollectionElement(); element != nil {
+				property["items"] = enumSchema(element, c.reflector.Output, false)
+			} else {
+				items["enum"] = collection.CollectionItems().WireValues()
+			}
+			property = fieldNullability(property, c.reflector.Output || collection.AllowsNullInput())
+		} else {
+			constraint, err = choice.Parse(field.Field.StructField().Tag, choiceType)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("field %s choices: %w", fieldPath, err)
+		}
+		if constraint != nil && enumeration == nil {
+			if field.Quoted {
+				return nil, fmt.Errorf("field %s choice cannot override quoted JSON wire type", fieldPath)
+			}
+			// A custom scalar's explicit JSON wire schema can differ from its
+			// Go kind. Never append contradictory typed choices to that schema.
+			compatible := false
+			switch types := property["type"].(type) {
+			case string:
+				compatible = types == constraint.JSONType()
+			case []string:
+				for _, name := range types {
+					if name == constraint.JSONType() {
+						compatible = true
+					}
+				}
+			}
+			if declared && !compatible {
+				return nil, fmt.Errorf("field %s choice type conflicts with explicit scalar wire schema", fieldPath)
+			}
+			values := constraint.WireValues()
+			if field.Field.ReflectedType.Kind() == reflect.Pointer {
+				values = append(values, nil)
+			}
+			property["enum"] = values
+		}
+	}
+	policy, err := format.Parse(field.Field.Tag)
+	if err != nil {
+		return nil, fmt.Errorf("field %s format: %w", fieldPath, err)
+	}
+	if policy.Nullable != nil {
+		property = fieldNullability(property, *policy.Nullable)
+	}
+	if enumeration != nil && !c.reflector.Output && !enumeration.AllowsNullInput() {
+		property = fieldNullability(property, false)
+	}
+	if err := fieldconstraints.Apply(property, field.Field.Tag); err != nil {
+		return nil, fmt.Errorf("field %s: %w", fieldPath, err)
+	}
+	if c.reflector.Annotate != nil {
+		description, example := c.reflector.Annotate(fieldPath, field.Field.StructField())
+		if description != "" {
+			property["description"] = description
+		}
+		if example != nil {
+			property["examples"] = []any{example}
+		}
+	}
+	return property, nil
 }
