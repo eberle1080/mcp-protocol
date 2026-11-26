@@ -26,8 +26,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/viant/afs v1.30.0 h1:dbgVVSCPwGHUgpgkWJ5gdjKBqssT7OV7Z2M81CjwZEY=
 github.com/viant/afs v1.30.0/go.mod h1:rScbFd9LJPGTM8HOI8Kjwee0AZ+MZMupAvFpPg+Qdj4=
-github.com/viant/x v0.5.0 h1:iSWOrKbabDwHAcm25koSY0lJ65DBXYBjWi4n2Tyq3z0=
-github.com/viant/x v0.5.0/go.mod h1:Ud4v5LGA8uA0EfmuO4H0t0YgAq2FNLnh3ydQUjBdaLI=
+github.com/viant/x v0.6.0 h1:hVtC0owFwyz82SxxoXkH5exJ2hlc/+C4ppytmxr/wWo=
+github.com/viant/x v0.6.0/go.mod h1:Ud4v5LGA8uA0EfmuO4H0t0YgAq2FNLnh3ydQUjBdaLI=
 github.com/viant/xreflect v0.7.3 h1:Oi2ZzSYWvs3lFBNMHEwHm6pu+3sQRlklzllycZyOGHk=
 github.com/viant/xreflect v0.7.3/go.mod h1:BwI+lqFjhKv2Vn4E0Jt6nvbwcFOWrM6H+sOMOX3JiU4=
 github.com/viant/xunsafe v0.10.3 h1:Fi4N+b5PH7e2iwT1UquAe7wUlTn4Fnb2kBnFLBixX+M=
