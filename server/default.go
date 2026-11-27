@@ -8,6 +8,7 @@ import (
 	"github.com/eberle1080/jsonrpc"
 	"github.com/eberle1080/jsonrpc/transport"
 	"github.com/eberle1080/mcp-protocol/client"
+	"github.com/eberle1080/mcp-protocol/extension/apps"
 	"github.com/eberle1080/mcp-protocol/logger"
 	"github.com/eberle1080/mcp-protocol/schema"
 	"github.com/eberle1080/mcp-protocol/syncmap"
@@ -81,6 +82,11 @@ func (d *DefaultHandler) populateCapabilities(capabilities *schema.ServerCapabil
 		extensions[schema.SkillsExtension] = settings
 		if capabilities.Resources == nil {
 			capabilities.Resources = &schema.ServerCapabilitiesResources{ListChanged: listChangedOrDefault(d.ResourcesListChanged)}
+		}
+	}
+	if d.ImplementsApps() {
+		if _, declared := extensions[apps.ExtensionID]; !declared {
+			extensions[apps.ExtensionID] = map[string]interface{}{}
 		}
 	}
 	capabilities.Extensions = extensions
@@ -160,6 +166,9 @@ func (d *DefaultHandler) ListTools(ctx context.Context, jRequest *jsonrpc.TypedR
 	// Strip output schemas only for clients known to predate them (2025-03-26 and older). An
 	// unknown version (no per-request meta and no initialize yet) keeps the full tool list
 	// rather than failing the call.
+	if !d.clientSupportsApps(jRequest.Request.Params.Meta) {
+		tools = withoutAppOnlyTools(tools)
+	}
 	if protocolVersion != "" && !schema.IsProtocolNewer(protocolVersion, "2025-03-26") {
 		//needs to clean output schema, it was introduced after version "2025-03-26"
 		for i := range tools {
@@ -179,6 +188,19 @@ func (d *DefaultHandler) CallTool(ctx context.Context, jRequest *jsonrpc.TypedRe
 	handler, ok := d.getToolHandler(request.Params.Name)
 	if !ok {
 		return nil, jsonrpc.NewMethodNotFound(fmt.Sprintf("tool %v not found", request.Params.Name), nil)
+	}
+	// A tool only a view may use does not exist for a client without views.
+	// Judge it by the metadata tools/list would show this caller.
+	if entry, found := d.ToolRegistry.Get(request.Params.Name); found {
+		metadata := entry.Metadata
+		if entry.MetadataFor != nil {
+			if resolved, err := entry.MetadataFor(ctx); err == nil {
+				metadata = resolved
+			}
+		}
+		if !apps.VisibleToModel(metadata) && !d.clientSupportsApps(request.Params.Meta) {
+			return nil, jsonrpc.NewMethodNotFound(fmt.Sprintf("tool %v not found", request.Params.Name), nil)
+		}
 	}
 	return handler(ctx, request)
 }

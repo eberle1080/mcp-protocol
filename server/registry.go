@@ -11,6 +11,7 @@ type Registry struct {
 	staticSkills             map[string]*skillformat.Static
 	staticResources          map[string]schema.Resource
 	skills                   *syncmap.Map[string, schema.Skill]
+	appResources             *syncmap.Map[string, bool]
 	ToolRegistry             *syncmap.Map[string, *ToolEntry]
 	ResourceRegistry         *syncmap.Map[string, *ResourceEntry]
 	ResourceTemplateRegistry *syncmap.Map[string, *ResourceTemplateEntry]
@@ -24,6 +25,7 @@ func NewRegistry() *Registry {
 		staticSkills:             map[string]*skillformat.Static{},
 		staticResources:          map[string]schema.Resource{},
 		skills:                   syncmap.NewMap[string, schema.Skill](),
+		appResources:             syncmap.NewMap[string, bool](),
 		ToolRegistry:             syncmap.NewMap[string, *ToolEntry](),
 		ResourceRegistry:         syncmap.NewMap[string, *ResourceEntry](),
 		ResourceTemplateRegistry: syncmap.NewMap[string, *ResourceTemplateEntry](),
