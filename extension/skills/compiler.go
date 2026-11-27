@@ -1,6 +1,7 @@
 package skills
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -16,7 +17,13 @@ import (
 )
 
 // Compiler seals a complete filesystem tree into immutable byte authority.
-type Compiler struct{ Source fs.FS }
+type Compiler struct {
+	Source fs.FS
+	// Meta becomes the compiled entry's _meta object. It is copied at compile
+	// time and must be JSON. SEP-2640 reserves the SkillsMetaPrefix keys for
+	// itself; use your own reverse-domain prefix.
+	Meta map[string]interface{}
+}
 
 func (c Compiler) Compile(ctx context.Context, uri string) (*Static, error) {
 	if ctx == nil || c.Source == nil {
@@ -69,8 +76,12 @@ func (c Compiler) Compile(ctx context.Context, uri string) (*Static, error) {
 	if err != nil {
 		return nil, err
 	}
+	meta, err := cloneMeta(c.Meta)
+	if err != nil {
+		return nil, err
+	}
 	base, _ := url.Parse(root)
-	result := &Static{entry: schema.Skill{Uri: uri, Frontmatter: front, Resources: schema.SkillResources{Files: []schema.SkillResource{}}}, files: map[string]string{}, root: root}
+	result := &Static{entry: schema.Skill{Uri: uri, Frontmatter: front, Resources: schema.SkillResources{Files: []schema.SkillResource{}}, Meta: meta}, files: map[string]string{}, root: root}
 	names := make([]string, 0, len(files))
 	for name := range files {
 		names = append(names, name)
@@ -83,6 +94,11 @@ func (c Compiler) Compile(ctx context.Context, uri string) (*Static, error) {
 		u.RawPath = ""
 		result.files[u.String()] = data
 		result.entry.Resources.Files = append(result.entry.Resources.Files, schema.SkillResource{Uri: u.String(), Digest: fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(data))), Size: int64(len(data))})
+	}
+	// Refuse what a host would refuse, such as a file name containing a
+	// percent sign or a backslash, so that every compiled skill can be loaded.
+	if err := Validate(result.entry); err != nil {
+		return nil, fmt.Errorf("skill %s: %w", uri, err)
 	}
 	result.initMetadata()
 	if err := ctx.Err(); err != nil {
@@ -162,6 +178,25 @@ func Validate(entry schema.Skill) error {
 		return fmt.Errorf("skill entrypoint missing from inventory")
 	}
 	return nil
+}
+
+// cloneMeta detaches a caller's _meta object so later changes to it cannot
+// reach the sealed entry.
+func cloneMeta(meta map[string]interface{}) (map[string]interface{}, error) {
+	if meta == nil {
+		return nil, nil
+	}
+	raw, err := json.Marshal(meta)
+	if err != nil {
+		return nil, fmt.Errorf("skill _meta must be JSON: %w", err)
+	}
+	var result map[string]interface{}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	if err := decoder.Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func Clone(entry schema.Skill) (schema.Skill, error) {

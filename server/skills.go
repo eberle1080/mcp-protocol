@@ -57,6 +57,7 @@ func (r *Registry) RegisterSkill(entry schema.Skill) error {
 	r.skills.Put(entry.Uri, copy)
 	r.Methods.Put(schema.MethodSkillsList, true)
 	r.Methods.Put(schema.MethodSkillsGet, true)
+	r.Methods.Put(schema.MethodResourcesDirectoryRead, true)
 	return nil
 }
 

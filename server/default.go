@@ -32,6 +32,12 @@ type DefaultHandler struct {
 	// fetch the metadata again each time they need it.
 	SkillsCacheTTL   time.Duration
 	SkillsCacheScope schema.CacheableResultCacheScope
+	// SkillsDirectoryRead turns resources/directory/read (SEP-2640) on or off
+	// for the skills this handler registers. Unset, it is on while every
+	// skill is compiled (RegisterStaticSkill) and off once a dynamic skill is
+	// registered. Its listings carry the skills cache hints above. See
+	// ReadResourceDirectory for what the default lists.
+	SkillsDirectoryRead *bool
 	*Registry
 }
 
@@ -68,7 +74,11 @@ func (d *DefaultHandler) populateCapabilities(capabilities *schema.ServerCapabil
 		}
 	}
 	if d.skills != nil && d.skills.Size() > 0 {
-		extensions[schema.SkillsExtension] = map[string]interface{}{}
+		settings := map[string]interface{}{}
+		if d.directoryReadEnabled() {
+			settings[schema.SkillsDirectoryRead] = true
+		}
+		extensions[schema.SkillsExtension] = settings
 		if capabilities.Resources == nil {
 			capabilities.Resources = &schema.ServerCapabilitiesResources{ListChanged: listChangedOrDefault(d.ResourcesListChanged)}
 		}
@@ -213,6 +223,9 @@ func (d *DefaultHandler) GetPrompt(ctx context.Context, jRequest *jsonrpc.TypedR
 
 // Implements returns true for supported methods.
 func (d *DefaultHandler) Implements(method string) bool {
+	if method == schema.MethodResourcesDirectoryRead && !d.directoryReadEnabled() {
+		return false
+	}
 	has, _ := d.Methods.Get(method)
 	return has
 }
