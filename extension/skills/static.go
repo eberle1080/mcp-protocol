@@ -51,7 +51,10 @@ func (s *Static) initMetadata() {
 		size := int(file.Size)
 		resource := schema.Resource{Uri: file.Uri, Name: file.Uri, MimeType: &kind, Size: &size}
 		if file.Uri == s.entry.Uri {
+			// SEP-2640: the SKILL.md resource SHOULD take its name and description
+			// from the frontmatter.
 			name, description := s.entry.Frontmatter["name"].(string), s.entry.Frontmatter["description"].(string)
+			resource.Name = name
 			resource.Title = &name
 			resource.Description = &description
 		}
