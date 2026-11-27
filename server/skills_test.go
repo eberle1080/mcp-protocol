@@ -8,6 +8,7 @@ import (
 	skillformat "github.com/eberle1080/mcp-protocol/extension/skills"
 	"github.com/eberle1080/mcp-protocol/schema"
 	"testing"
+	"time"
 	"testing/fstest"
 )
 
@@ -52,4 +53,46 @@ func TestSkillsDynamicEntrypointRequiresReader(t *testing.T) {
 	})
 	require.NoError(t, registry.RegisterSkill(entry))
 	require.True(t, registry.ImplementsSkills())
+}
+
+func TestSkillsCarryConfiguredCacheHints(t *testing.T) {
+	ctx := context.Background()
+	files := fstest.MapFS{"SKILL.md": {Data: []byte("---\nname: demo\ndescription: A demo skill.\n---\nBody")}}
+	compiled, err := (skillformat.Compiler{Source: files}).Compile(ctx, "skill://demo/SKILL.md")
+	require.NoError(t, err)
+
+	unset := NewDefaultHandler(nil, nil, nil)
+	require.NoError(t, unset.RegisterStaticSkill(compiled))
+	listed, rpcErr := unset.ListSkills(ctx, &jsonrpc.TypedRequest[*schema.ListSkillsRequest]{Request: &schema.ListSkillsRequest{}})
+	require.Nil(t, rpcErr)
+	require.Nil(t, listed.TtlMs, "unset hints are left to the transport's defaults")
+	require.Empty(t, listed.CacheScope)
+
+	configured := NewDefaultHandler(nil, nil, nil)
+	configured.SkillsCacheTTL = time.Hour
+	configured.SkillsCacheScope = schema.CacheableResultCacheScopePublic
+	require.NoError(t, configured.RegisterStaticSkill(compiled))
+	listed, rpcErr = configured.ListSkills(ctx, &jsonrpc.TypedRequest[*schema.ListSkillsRequest]{Request: &schema.ListSkillsRequest{}})
+	require.Nil(t, rpcErr)
+	require.Equal(t, 3600000, *listed.TtlMs)
+	require.Equal(t, schema.CacheableResultCacheScopePublic, listed.CacheScope)
+	got, rpcErr := configured.GetSkill(ctx, &jsonrpc.TypedRequest[*schema.GetSkillRequest]{Request: &schema.GetSkillRequest{Params: schema.GetSkillRequestParams{Uri: "skill://demo/SKILL.md"}}})
+	require.Nil(t, rpcErr)
+	require.Equal(t, 3600000, *got.TtlMs)
+	require.Equal(t, schema.CacheableResultCacheScopePublic, got.CacheScope)
+}
+
+func TestStaticSkillEntrypointResourceTakesSkillName(t *testing.T) {
+	files := fstest.MapFS{
+		"SKILL.md":         {Data: []byte("---\nname: demo\ndescription: A demo skill.\n---\nBody")},
+		"reference/one.md": {Data: []byte("# One")},
+	}
+	compiled, err := (skillformat.Compiler{Source: files}).Compile(context.Background(), "skill://demo/SKILL.md")
+	require.NoError(t, err)
+	names := map[string]string{}
+	for _, resource := range compiled.Resources() {
+		names[resource.Uri] = resource.Name
+	}
+	require.Equal(t, "demo", names["skill://demo/SKILL.md"])
+	require.Equal(t, "skill://demo/reference/one.md", names["skill://demo/reference/one.md"])
 }

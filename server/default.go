@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eberle1080/jsonrpc"
 	"github.com/eberle1080/jsonrpc/transport"
@@ -25,6 +26,12 @@ type DefaultHandler struct {
 	ToolsListChanged     *bool
 	ResourcesListChanged *bool
 	PromptsListChanged   *bool
+	// SkillsCacheTTL and SkillsCacheScope are the caching hints (ttlMs and
+	// cacheScope) that skills/list and skills/get results carry in 2026-07-28.
+	// Left unset, clients get no freshness (0 ms) and private scope, so they
+	// fetch the metadata again each time they need it.
+	SkillsCacheTTL   time.Duration
+	SkillsCacheScope schema.CacheableResultCacheScope
 	*Registry
 }
 

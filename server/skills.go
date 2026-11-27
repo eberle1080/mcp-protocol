@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/eberle1080/jsonrpc"
 	skillformat "github.com/eberle1080/mcp-protocol/extension/skills"
@@ -94,6 +95,7 @@ func (d *DefaultHandler) ListSkills(ctx context.Context, request *jsonrpc.TypedR
 	}
 	end := min(start+32, len(entries))
 	result := &schema.ListSkillsResult{ResultType: schema.ResultTypeComplete, Skills: entries[start:end]}
+	result.TtlMs, result.CacheScope = d.skillsCacheHints()
 	if end < len(entries) {
 		cursor := base64.RawURLEncoding.EncodeToString([]byte(revision + ":" + strconv.Itoa(end)))
 		result.NextCursor = &cursor
@@ -116,5 +118,18 @@ func (d *DefaultHandler) GetSkill(ctx context.Context, request *jsonrpc.TypedReq
 	if err != nil {
 		return nil, jsonrpc.NewInternalError(err.Error(), nil)
 	}
-	return &schema.GetSkillResult{ResultType: schema.ResultTypeComplete, Skill: copy}, nil
+	result := &schema.GetSkillResult{ResultType: schema.ResultTypeComplete, Skill: copy}
+	result.TtlMs, result.CacheScope = d.skillsCacheHints()
+	return result, nil
+}
+
+// skillsCacheHints returns the configured caching hints, or nothing when none
+// are set so the transport applies its defaults.
+func (d *DefaultHandler) skillsCacheHints() (*int, schema.CacheableResultCacheScope) {
+	var ttl *int
+	if d.SkillsCacheTTL > 0 {
+		ms := int(d.SkillsCacheTTL / time.Millisecond)
+		ttl = &ms
+	}
+	return ttl, d.SkillsCacheScope
 }
