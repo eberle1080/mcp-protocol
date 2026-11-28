@@ -74,7 +74,7 @@ func (r *Registry) RegisterStaticSkill(compiled *skillformat.Static) error {
 		r.staticResources[resource.Uri] = resource
 		r.ResourceRegistry.Put(resource.Uri, &ResourceEntry{Metadata: resource, Handler: compiled.ReadResource})
 	}
-	for _, method := range []string{schema.MethodResourcesList, schema.MethodResourcesRead, schema.MethodSkillsList, schema.MethodSkillsGet} {
+	for _, method := range []string{schema.MethodResourcesList, schema.MethodResourcesRead, schema.MethodSkillsList, schema.MethodSkillsGet, schema.MethodResourcesDirectoryRead} {
 		r.Methods.Put(method, true)
 	}
 	return nil
